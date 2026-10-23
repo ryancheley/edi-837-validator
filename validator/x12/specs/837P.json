@@ -1,0 +1,157 @@
+{
+  "transaction": "837P",
+  "version": "005010X222A1",
+  "structure": [
+    {
+      "id": "ST", "name": "Transaction Set Header", "usage": "R",
+      "elements": [
+        {"position": 1, "ref": "ST01", "name": "Transaction Set ID", "usage": "R", "data_type": "ID", "codes": ["837"]},
+        {"position": 2, "ref": "ST02", "name": "Transaction Set Control Number", "usage": "R", "data_type": "AN", "min_len": 4, "max_len": 9},
+        {"position": 3, "ref": "ST03", "name": "Implementation Convention Reference", "usage": "R", "data_type": "AN", "codes": ["005010X222A1"]}
+      ]
+    },
+    {
+      "id": "BHT", "name": "Beginning of Hierarchical Transaction", "usage": "R",
+      "elements": [
+        {"position": 1, "ref": "BHT01", "name": "Hierarchical Structure Code", "usage": "R", "data_type": "ID", "codes": ["0019"]},
+        {"position": 2, "ref": "BHT02", "name": "Transaction Set Purpose Code", "usage": "R", "data_type": "ID", "codes": ["00", "18"]},
+        {"position": 3, "ref": "BHT03", "name": "Originator Application Transaction ID", "usage": "R", "data_type": "AN", "min_len": 1, "max_len": 50},
+        {"position": 4, "ref": "BHT04", "name": "Transaction Set Creation Date", "usage": "R", "data_type": "DT"},
+        {"position": 5, "ref": "BHT05", "name": "Transaction Set Creation Time", "usage": "R", "data_type": "TM"},
+        {"position": 6, "ref": "BHT06", "name": "Claim or Encounter Identifier", "usage": "R", "data_type": "ID", "codes": ["CH", "RP"]}
+      ]
+    },
+    {
+      "type": "loop", "id": "1000A", "name": "Submitter Name", "usage": "R", "repeat": 1,
+      "children": [
+        {"id": "NM1", "name": "Submitter Name", "usage": "R", "trigger": {"NM101": "41"},
+         "elements": [
+           {"position": 1, "ref": "NM101", "usage": "R", "data_type": "ID", "codes": ["41"]},
+           {"position": 2, "ref": "NM102", "usage": "R", "data_type": "ID", "codes": ["1", "2"]},
+           {"position": 3, "ref": "NM103", "name": "Submitter Last/Org Name", "usage": "R", "data_type": "AN", "min_len": 1, "max_len": 60}
+         ]},
+        {"id": "PER", "name": "Submitter Contact", "usage": "R", "trigger": {"PER01": "IC"},
+         "elements": [
+           {"position": 1, "ref": "PER01", "usage": "R", "data_type": "ID", "codes": ["IC"]},
+           {"position": 3, "ref": "PER03", "usage": "R", "data_type": "ID", "codes": ["EM", "FX", "TE"]}
+         ]}
+      ]
+    },
+    {
+      "type": "loop", "id": "1000B", "name": "Receiver Name", "usage": "R", "repeat": 1,
+      "children": [
+        {"id": "NM1", "name": "Receiver Name", "usage": "R", "trigger": {"NM101": "40"},
+         "elements": [
+           {"position": 1, "ref": "NM101", "usage": "R", "data_type": "ID", "codes": ["40"]},
+           {"position": 2, "ref": "NM102", "usage": "R", "data_type": "ID", "codes": ["2"]},
+           {"position": 3, "ref": "NM103", "name": "Receiver Name", "usage": "R", "data_type": "AN", "min_len": 1, "max_len": 60}
+         ]}
+      ]
+    },
+    {
+      "type": "loop", "id": "2000A", "name": "Billing Provider Hierarchical Level", "usage": "R", "repeat": 0,
+      "children": [
+        {"id": "HL", "name": "Billing Provider HL", "usage": "R", "trigger": {"HL03": "20"},
+         "elements": [
+           {"position": 1, "ref": "HL01", "usage": "R", "data_type": "AN", "min_len": 1, "max_len": 12},
+           {"position": 3, "ref": "HL03", "usage": "R", "data_type": "ID", "codes": ["20"]},
+           {"position": 4, "ref": "HL04", "usage": "R", "data_type": "ID", "codes": ["0", "1"]}
+         ]},
+        {
+          "type": "loop", "id": "2010AA", "name": "Billing Provider Name", "usage": "R", "repeat": 1,
+          "children": [
+            {"id": "NM1", "name": "Billing Provider Name", "usage": "R", "trigger": {"NM101": "85"},
+             "elements": [
+               {"position": 1, "ref": "NM101", "usage": "R", "data_type": "ID", "codes": ["85"]},
+               {"position": 2, "ref": "NM102", "usage": "R", "data_type": "ID", "codes": ["1", "2"]},
+               {"position": 3, "ref": "NM103", "name": "Billing Provider Name", "usage": "R", "data_type": "AN", "min_len": 1, "max_len": 60}
+             ]},
+            {"id": "N3", "name": "Billing Provider Address", "usage": "R",
+             "elements": [{"position": 1, "ref": "N301", "usage": "R", "data_type": "AN", "min_len": 1, "max_len": 55}]},
+            {"id": "N4", "name": "Billing Provider City/State/ZIP", "usage": "R",
+             "elements": [
+               {"position": 1, "ref": "N401", "name": "City", "usage": "R", "data_type": "AN", "min_len": 2, "max_len": 30},
+               {"position": 2, "ref": "N402", "name": "State", "usage": "R", "data_type": "ID", "min_len": 2, "max_len": 2},
+               {"position": 3, "ref": "N403", "name": "Postal Code", "usage": "R", "data_type": "ID", "min_len": 3, "max_len": 15}
+             ]}
+          ]
+        },
+        {
+          "type": "loop", "id": "2000B", "name": "Subscriber Hierarchical Level", "usage": "R", "repeat": 0,
+          "children": [
+            {"id": "HL", "name": "Subscriber HL", "usage": "R", "trigger": {"HL03": "22"},
+             "elements": [
+               {"position": 1, "ref": "HL01", "usage": "R", "data_type": "AN", "min_len": 1, "max_len": 12},
+               {"position": 3, "ref": "HL03", "usage": "R", "data_type": "ID", "codes": ["22"]},
+               {"position": 4, "ref": "HL04", "usage": "R", "data_type": "ID", "codes": ["0", "1"]}
+             ]},
+            {"id": "SBR", "name": "Subscriber Information", "usage": "R",
+             "elements": [
+               {"position": 1, "ref": "SBR01", "name": "Payer Responsibility", "usage": "R", "data_type": "ID", "codes": ["A", "B", "C", "D", "E", "F", "G", "H", "P", "S", "T", "U"]},
+               {"position": 9, "ref": "SBR09", "name": "Claim Filing Indicator", "usage": "S", "data_type": "ID", "codes": ["09", "11", "12", "13", "14", "15", "16", "17", "AM", "BL", "CH", "CI", "DS", "FI", "HM", "LM", "MA", "MB", "MC", "OF", "TV", "VA", "WC", "ZZ"]}
+             ]},
+            {
+              "type": "loop", "id": "2010BA", "name": "Subscriber Name", "usage": "R", "repeat": 1,
+              "children": [
+                {"id": "NM1", "name": "Subscriber Name", "usage": "R", "trigger": {"NM101": "IL"},
+                 "elements": [
+                   {"position": 1, "ref": "NM101", "usage": "R", "data_type": "ID", "codes": ["IL"]},
+                   {"position": 2, "ref": "NM102", "usage": "R", "data_type": "ID", "codes": ["1", "2"]},
+                   {"position": 3, "ref": "NM103", "name": "Subscriber Last Name", "usage": "R", "data_type": "AN", "min_len": 1, "max_len": 60}
+                 ]}
+              ]
+            },
+            {
+              "type": "loop", "id": "2010BB", "name": "Payer Name", "usage": "R", "repeat": 1,
+              "children": [
+                {"id": "NM1", "name": "Payer Name", "usage": "R", "trigger": {"NM101": "PR"},
+                 "elements": [
+                   {"position": 1, "ref": "NM101", "usage": "R", "data_type": "ID", "codes": ["PR"]},
+                   {"position": 2, "ref": "NM102", "usage": "R", "data_type": "ID", "codes": ["2"]},
+                   {"position": 3, "ref": "NM103", "name": "Payer Name", "usage": "R", "data_type": "AN", "min_len": 1, "max_len": 60},
+                   {"position": 8, "ref": "NM108", "usage": "R", "data_type": "ID", "codes": ["PI", "XV"]},
+                   {"position": 9, "ref": "NM109", "name": "Payer Identifier", "usage": "R", "data_type": "AN", "min_len": 2, "max_len": 80}
+                 ]},
+                {
+                  "type": "loop", "id": "2300", "name": "Claim Information", "usage": "R", "repeat": 100,
+                  "children": [
+                    {"id": "CLM", "name": "Claim Information", "usage": "R",
+                     "elements": [
+                       {"position": 1, "ref": "CLM01", "name": "Patient Control Number", "usage": "R", "data_type": "AN", "min_len": 1, "max_len": 38},
+                       {"position": 2, "ref": "CLM02", "name": "Total Claim Charge Amount", "usage": "R", "data_type": "R"},
+                       {"position": 5, "ref": "CLM05", "name": "Health Care Service Location", "usage": "R", "components": [
+                         {"position": 1, "ref": "CLM05-1", "name": "Place of Service Code", "usage": "R", "data_type": "ID", "codeset": "place_of_service"},
+                         {"position": 2, "ref": "CLM05-2", "name": "Facility Code Qualifier", "usage": "R", "data_type": "ID", "codes": ["B"]},
+                         {"position": 3, "ref": "CLM05-3", "name": "Claim Frequency Code", "usage": "R", "data_type": "ID", "min_len": 1, "max_len": 1}
+                       ]}
+                     ]},
+                    {
+                      "type": "loop", "id": "2400", "name": "Service Line", "usage": "R", "repeat": 50,
+                      "children": [
+                        {"id": "LX", "name": "Service Line Number", "usage": "R",
+                         "elements": [{"position": 1, "ref": "LX01", "usage": "R", "data_type": "N"}]},
+                        {"id": "SV1", "name": "Professional Service", "usage": "R",
+                         "elements": [
+                           {"position": 2, "ref": "SV102", "name": "Line Item Charge Amount", "usage": "R", "data_type": "R"},
+                           {"position": 3, "ref": "SV103", "name": "Unit Basis", "usage": "R", "data_type": "ID", "codes": ["MJ", "UN"]},
+                           {"position": 4, "ref": "SV104", "name": "Service Unit Count", "usage": "R", "data_type": "R"}
+                         ]}
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SE", "name": "Transaction Set Trailer", "usage": "R",
+      "elements": [
+        {"position": 1, "ref": "SE01", "name": "Segment Count", "usage": "R", "data_type": "N", "min_len": 1, "max_len": 10},
+        {"position": 2, "ref": "SE02", "name": "Transaction Set Control Number", "usage": "R", "data_type": "AN", "min_len": 4, "max_len": 9}
+      ]
+    }
+  ]
+}

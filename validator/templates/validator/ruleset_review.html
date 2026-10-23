@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{% url 'plan_detail' ruleset.guide.plan.pk %}" class="text-sm text-sky-700">← {{ ruleset.guide.plan.name }}</a>
+<h1 class="text-2xl font-semibold mt-2 mb-4">Review extracted rule set</h1>
+
+{% if error %}<div class="mb-4 rounded bg-red-100 text-red-800 px-4 py-2">{{ error }}</div>{% endif %}
+
+<p class="text-sm text-slate-500 mb-4">
+  This draft was produced by an LLM from the companion guide PDF. Review and edit
+  the JSON below, then activate it to use it in plan validation.
+</p>
+
+<form method="post" class="space-y-4">
+  {% csrf_token %}
+  <textarea name="data" rows="24"
+            class="w-full font-mono text-sm rounded border border-slate-300 p-3">{{ raw }}</textarea>
+  <label class="flex items-center gap-2 text-sm">
+    <input type="checkbox" name="activate" {% if ruleset.is_active %}checked{% endif %}>
+    Activate this rule set (use it for plan validation)
+  </label>
+  <button class="rounded bg-sky-600 px-4 py-2 text-white hover:bg-sky-700">Save</button>
+</form>
+{% endblock %}

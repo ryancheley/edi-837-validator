@@ -1,0 +1,196 @@
+import threading
+
+from django.contrib.auth.decorators import login_required
+from django.db import connection
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+
+from .forms import GuideUploadForm, PlanForm
+from .guides import extract, schema
+from .models import CompanionGuide, Plan, RuleSet, ValidationRun
+from .x12 import engine
+
+MAX_837_BYTES = 10 * 1024 * 1024  # claim files are small; cap defensively
+
+
+@login_required
+def validate_view(request):
+    plans = Plan.objects.all().order_by("name")
+    if request.method != "POST":
+        return render(request, "validator/validate.html", {"plans": plans})
+
+    upload = request.FILES.get("edi_file")
+    if upload is None:
+        return render(
+            request,
+            "validator/validate.html",
+            {"plans": plans, "error": "Please choose an 837 file to validate."},
+        )
+    raw = upload.read(MAX_837_BYTES + 1)
+    if len(raw) > MAX_837_BYTES:
+        return render(
+            request,
+            "validator/validate.html",
+            {"plans": plans, "error": "File too large (max 10 MB)."},
+        )
+
+    plan = None
+    overlay = None
+    plan_id = request.POST.get("plan")
+    if plan_id:
+        plan = get_object_or_404(Plan, pk=plan_id)
+        ruleset = plan.active_ruleset()
+        if ruleset:
+            overlay = schema.to_overlay(ruleset.data)
+
+    result = engine.validate(raw, overlay=overlay)
+
+    # PHI: persist only structured results and metadata, never the raw 837.
+    ValidationRun.objects.create(
+        user=request.user if request.user.is_authenticated else None,
+        plan=plan,
+        txn_type=result.txn_type or "",
+        filename=upload.name,
+        error_count=result.error_count,
+        summary=result.summary(),
+    )
+
+    context = {
+        "plans": plans,
+        "result": result,
+        "grouped": _group_by_loop(result.errors),
+        "filename": upload.name,
+        "plan": plan,
+    }
+    template = "validator/_results.html" if request.headers.get("HX-Request") else "validator/validate.html"
+    return render(request, template, context)
+
+
+def _group_by_loop(errors):
+    groups: dict[str, list] = {}
+    for err in errors:
+        groups.setdefault(err.loop or "Envelope / header", []).append(err)
+    return groups
+
+
+# --------------------------------------------------------------------------- #
+# Plans & companion guides
+# --------------------------------------------------------------------------- #
+@login_required
+def plan_list(request):
+    return render(request, "validator/plans.html", {"plans": Plan.objects.all().order_by("name")})
+
+
+@login_required
+def plan_create(request):
+    form = PlanForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        plan = form.save()
+        return redirect("plan_detail", pk=plan.pk)
+    return render(request, "validator/plan_form.html", {"form": form})
+
+
+@login_required
+def plan_detail(request, pk):
+    plan = get_object_or_404(Plan, pk=pk)
+    return render(
+        request,
+        "validator/plan_detail.html",
+        {"plan": plan, "guides": plan.guides.order_by("-uploaded_at"), "upload_form": GuideUploadForm()},
+    )
+
+
+@login_required
+@require_POST
+def guide_upload(request, pk):
+    plan = get_object_or_404(Plan, pk=pk)
+    form = GuideUploadForm(request.POST, request.FILES)
+    if not form.is_valid():
+        return render(
+            request,
+            "validator/plan_detail.html",
+            {"plan": plan, "guides": plan.guides.order_by("-uploaded_at"), "upload_form": form},
+        )
+    guide = CompanionGuide.objects.create(plan=plan, pdf=form.cleaned_data["pdf"])
+    _start_extraction(guide)
+    return redirect("plan_detail", pk=plan.pk)
+
+
+@login_required
+def guide_status(request, pk):
+    """htmx poll target: returns the status chip + review link for one guide."""
+    guide = get_object_or_404(CompanionGuide, pk=pk)
+    ruleset = guide.rulesets.order_by("-created_at").first()
+    return render(request, "validator/_guide_status.html", {"guide": guide, "ruleset": ruleset})
+
+
+@login_required
+def ruleset_review(request, pk):
+    import json
+
+    ruleset = get_object_or_404(RuleSet, pk=pk)
+    if request.method == "POST":
+        try:
+            data = json.loads(request.POST.get("data", ""))
+        except json.JSONDecodeError as exc:
+            return _render_review(request, ruleset, error=f"Invalid JSON: {exc}")
+        errors = schema.validate_ruleset(data)
+        if errors:
+            return _render_review(request, ruleset, error="; ".join(errors), raw=request.POST.get("data"))
+        ruleset.data = data
+        ruleset.is_active = request.POST.get("activate") == "on"
+        ruleset.reviewed_by = request.user
+        ruleset.reviewed_at = timezone.now()
+        ruleset.save()
+        guide = ruleset.guide
+        guide.status = CompanionGuide.Status.ACTIVE if ruleset.is_active else CompanionGuide.Status.NEEDS_REVIEW
+        guide.save(update_fields=["status"])
+        return redirect("plan_detail", pk=guide.plan.pk)
+    return _render_review(request, ruleset)
+
+
+def _render_review(request, ruleset, error=None, raw=None):
+    import json
+
+    return render(
+        request,
+        "validator/ruleset_review.html",
+        {"ruleset": ruleset, "error": error, "raw": raw or json.dumps(ruleset.data, indent=2)},
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Background extraction
+# ponytail: a thread + status field, not Celery. Swap for a task queue only if
+# extraction volume or reliability needs grow.
+# --------------------------------------------------------------------------- #
+def _start_extraction(guide: CompanionGuide) -> None:
+    threading.Thread(target=_run_extraction, args=(guide.pk,), daemon=True).start()
+
+
+def _run_extraction(guide_pk: int) -> None:
+    try:
+        guide = CompanionGuide.objects.get(pk=guide_pk)
+        guide.status = CompanionGuide.Status.RUNNING
+        guide.save(update_fields=["status"])
+        with guide.pdf.open("rb") as fh:
+            pdf_bytes = fh.read()
+        data = extract.extract_ruleset(pdf_bytes, guide.plan.name)
+        RuleSet.objects.create(guide=guide, data=data, is_active=False)
+        guide.status = CompanionGuide.Status.NEEDS_REVIEW
+        guide.error = ""
+        guide.save(update_fields=["status", "error"])
+    except Exception as exc:  # noqa: BLE001 — surface any failure to the UI
+        guide = CompanionGuide.objects.get(pk=guide_pk)
+        guide.status = CompanionGuide.Status.FAILED
+        guide.error = str(exc)[:2000]
+        guide.save(update_fields=["status", "error"])
+    finally:
+        connection.close()  # thread owns its own DB connection
+
+
+def healthz(request):
+    from django.http import HttpResponse
+
+    return HttpResponse("ok")

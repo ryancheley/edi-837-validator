@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-6">New plan</h1>
+<form method="post" class="bg-white rounded-lg border border-slate-200 p-6 space-y-4 max-w-lg">
+  {% csrf_token %}
+  {% for field in form %}
+    <div>
+      <label class="block text-sm font-medium mb-1">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<p class="text-sm text-red-600 mt-1">{{ field.errors|striptags }}</p>{% endif %}
+    </div>
+  {% endfor %}
+  <button class="rounded bg-sky-600 px-4 py-2 text-white hover:bg-sky-700">Save</button>
+</form>
+{% endblock %}

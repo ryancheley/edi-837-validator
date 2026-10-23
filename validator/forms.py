@@ -1,0 +1,22 @@
+from django import forms
+
+from .models import Plan
+
+_INPUT = "w-full rounded border border-slate-300 px-3 py-2 focus:border-sky-500 focus:outline-none"
+
+
+class PlanForm(forms.ModelForm):
+    class Meta:
+        model = Plan
+        fields = ["name", "payer_id", "notes"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": _INPUT}),
+            "payer_id": forms.TextInput(attrs={"class": _INPUT}),
+            "notes": forms.Textarea(attrs={"class": _INPUT, "rows": 3}),
+        }
+
+
+class GuideUploadForm(forms.Form):
+    pdf = forms.FileField(
+        widget=forms.ClearableFileInput(attrs={"class": _INPUT, "accept": "application/pdf"})
+    )

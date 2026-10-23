@@ -1,0 +1,13 @@
+.git
+.venv
+__pycache__
+*.pyc
+db.sqlite3
+media/
+staticfiles/
+.env
+.python-version
+.pytest_cache
+.ruff_cache
+*.md
+!README.md

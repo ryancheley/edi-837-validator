@@ -1,0 +1,80 @@
+"""View-level tests with the real test client + real engine (no mocks)."""
+
+from __future__ import annotations
+
+import io
+
+import pytest
+from django.contrib.auth.models import User
+
+from validator.models import CompanionGuide, Plan, RuleSet, ValidationRun
+from validator.x12.tests.test_engine import _edi, _p_body
+
+
+@pytest.fixture
+def user(db):
+    return User.objects.create_user("tester", password="pw12345!")
+
+
+@pytest.fixture
+def client_in(client, user):
+    client.force_login(user)
+    return client
+
+
+def _upload(body):
+    return io.BytesIO(_edi(body).encode()), "claim.837"
+
+
+def test_validate_requires_login(client):
+    resp = client.get("/")
+    assert resp.status_code == 302 and "/login" in resp["Location"]
+
+
+def test_validate_clean_837p(client_in):
+    fh, name = _upload(_p_body())
+    fh.name = name
+    resp = client_in.post("/", {"edi_file": fh})
+    assert resp.status_code == 200
+    assert b"Valid" in resp.content
+    run = ValidationRun.objects.get()
+    assert run.txn_type == "837P"
+    assert run.error_count == 0
+
+
+def test_validate_reports_errors(client_in):
+    body = _p_body()
+    body[body.index("BHT*0019*00*REF123*20210101*1253*CH")] = "BHT*0019*00*REF123*20210101*1253*XX"
+    fh = io.BytesIO(_edi(body).encode())
+    fh.name = "bad.837"
+    resp = client_in.post("/", {"edi_file": fh})
+    assert resp.status_code == 200
+    assert b"ELEM.CODE" in resp.content
+    assert ValidationRun.objects.get().error_count > 0
+
+
+def test_validate_with_active_plan_overlay(client_in):
+    plan = Plan.objects.create(name="Acme")
+    guide = CompanionGuide.objects.create(plan=plan, pdf="companion_guides/x.pdf", status="active")
+    RuleSet.objects.create(
+        guide=guide,
+        is_active=True,
+        data={
+            "plan_name": "Acme",
+            "transaction_types": ["837P"],
+            "required_elements": [],
+            "code_restrictions": [{"ref": "SBR09", "allowed": ["MC"], "note": "Medicaid only"}],
+            "notes": [],
+        },
+    )
+    fh = io.BytesIO(_edi(_p_body()).encode())  # SBR09 = CI, disallowed by plan
+    fh.name = "claim.837"
+    resp = client_in.post("/", {"edi_file": fh, "plan": str(plan.pk)})
+    assert resp.status_code == 200
+    assert b"SBR09" in resp.content
+
+
+def test_plan_create_flow(client_in):
+    resp = client_in.post("/plans/new/", {"name": "BlueCo", "payer_id": "12345", "notes": ""})
+    assert resp.status_code == 302
+    assert Plan.objects.filter(name="BlueCo").exists()
