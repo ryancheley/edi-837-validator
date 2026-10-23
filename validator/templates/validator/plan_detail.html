@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{% url 'plans' %}" class="text-sm text-sky-700">← Plans</a>
+<h1 class="text-2xl font-semibold mt-2 mb-1">{{ plan.name }}</h1>
+<p class="text-slate-500 mb-6">{{ plan.payer_id }}{% if plan.notes %} · {{ plan.notes }}{% endif %}</p>
+
+<div class="bg-white rounded-lg border border-slate-200 p-6 mb-6 max-w-lg">
+  <h2 class="font-medium mb-3">Upload a companion guide (PDF)</h2>
+  <form method="post" action="{% url 'guide_upload' plan.pk %}" enctype="multipart/form-data" class="flex items-end gap-3">
+    {% csrf_token %}
+    <div class="flex-1">{{ upload_form.pdf }}</div>
+    <button class="rounded bg-sky-600 px-4 py-2 text-white hover:bg-sky-700">Upload & extract</button>
+  </form>
+  <p class="text-xs text-slate-400 mt-2">An LLM drafts a rule set from the PDF; you review it before it is used.</p>
+</div>
+
+<h2 class="font-medium mb-3">Companion guides</h2>
+{% if guides %}
+<div class="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">
+  {% for guide in guides %}
+    {% include "validator/_guide_status.html" with guide=guide ruleset=guide.rulesets.last %}
+  {% endfor %}
+</div>
+{% else %}
+  <p class="text-slate-500">No guides uploaded yet.</p>
+{% endif %}
+{% endblock %}

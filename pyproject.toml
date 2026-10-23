@@ -1,0 +1,45 @@
+[project]
+name = "edi-validator"
+version = "0.1.0"
+description = "EDI X12 837I/837P validation tool with companion-guide rule extraction"
+readme = "README.md"
+requires-python = ">=3.15"
+dependencies = [
+    "anthropic>=2.2.0",
+    "django>=6.1.2",
+    "gunicorn>=26.2.0",
+    "psycopg[binary]>=3.3.6",
+    "whitenoise>=6.12.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-django>=4.14.0",
+    "ruff>=0.17.2",
+    "ty>=0.0.91",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "core.settings"
+python_files = ["test_*.py", "tests.py"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ty.src]
+exclude = ["**/migrations/**"]
+
+# ty does not model Django's dynamically-injected ORM attributes (Manager
+# `.objects`, `get_<field>_display`, reverse FK accessors). Disable that one
+# rule for the Django-touching modules; the pure-Python engine stays strict.
+[[tool.ty.overrides]]
+include = ["validator/models.py", "validator/views.py", "validator/admin.py", "validator/tests/**"]
+
+[tool.ty.overrides.rules]
+unresolved-attribute = "ignore"

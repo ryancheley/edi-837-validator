@@ -1,0 +1,26 @@
+<div class="px-4 py-3 flex items-center justify-between"
+     {% if guide.status == 'pending' or guide.status == 'running' %}
+     hx-get="{% url 'guide_status' guide.pk %}" hx-trigger="load delay:2s" hx-swap="outerHTML"
+     {% endif %}>
+  <div>
+    <span class="font-mono text-sm">{{ guide.pdf.name|cut:"companion_guides/" }}</span>
+    <span class="text-xs text-slate-400">· {{ guide.uploaded_at|date:"Y-m-d H:i" }}</span>
+    {% if guide.status == 'failed' and guide.error %}
+      <p class="text-xs text-red-600 mt-1">{{ guide.error }}</p>
+    {% endif %}
+  </div>
+  <div class="flex items-center gap-3">
+    {% if guide.status == 'pending' or guide.status == 'running' %}
+      <span class="rounded-full bg-sky-100 text-sky-800 px-3 py-1 text-xs">{{ guide.get_status_display }}…</span>
+    {% elif guide.status == 'needs_review' %}
+      <span class="rounded-full bg-amber-100 text-amber-800 px-3 py-1 text-xs">Needs review</span>
+    {% elif guide.status == 'active' %}
+      <span class="rounded-full bg-green-100 text-green-800 px-3 py-1 text-xs">Active</span>
+    {% else %}
+      <span class="rounded-full bg-red-100 text-red-800 px-3 py-1 text-xs">Failed</span>
+    {% endif %}
+    {% if ruleset %}
+      <a href="{% url 'ruleset_review' ruleset.pk %}" class="text-sm text-sky-700">Review</a>
+    {% endif %}
+  </div>
+</div>
