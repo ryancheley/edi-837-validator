@@ -129,9 +129,14 @@ bootstrap:
 @types:
     uv run ty check
 
-# The full pre-push gate: lint, types, tests
+# Audit GitHub Actions workflows with zizmor
 [group('quality')]
-check: lint types test
+@zizmor *ARGS:
+    uv run zizmor {{ ARGS }} .github/workflows/
+
+# The full pre-push gate: lint, types, tests, workflow audit
+[group('quality')]
+check: lint types test zizmor
 
 # --------------------------------------------------
 # Docker / Coolify stack
