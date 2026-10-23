@@ -1,6 +1,18 @@
 from django.contrib import admin
 
-from .models import CompanionGuide, Plan, RuleSet, ValidationRun
+from .models import CompanionGuide, Plan, RuleSet, SiteConfiguration, ValidationRun
+
+
+@admin.register(SiteConfiguration)
+class SiteConfigurationAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "show_phi_warning")
+
+    def has_add_permission(self, request):
+        # Singleton: allow creating the row only if it doesn't exist yet.
+        return not SiteConfiguration.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Plan)

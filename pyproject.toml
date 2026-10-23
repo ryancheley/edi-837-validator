@@ -36,10 +36,18 @@ select = ["E", "F", "I", "UP", "B"]
 exclude = ["**/migrations/**"]
 
 # ty does not model Django's dynamically-injected ORM attributes (Manager
-# `.objects`, `get_<field>_display`, reverse FK accessors). Disable that one
-# rule for the Django-touching modules; the pure-Python engine stays strict.
+# `.objects`, `get_<field>_display`, reverse FK accessors) and types model
+# fields as their Field class rather than the Python value. Disable those rules
+# for the Django-touching modules; the pure-Python engine stays strict.
 [[tool.ty.overrides]]
-include = ["validator/models.py", "validator/views.py", "validator/admin.py", "validator/tests/**"]
+include = [
+    "validator/models.py",
+    "validator/views.py",
+    "validator/admin.py",
+    "validator/context_processors.py",
+    "validator/tests/**",
+]
 
 [tool.ty.overrides.rules]
 unresolved-attribute = "ignore"
+invalid-assignment = "ignore"
