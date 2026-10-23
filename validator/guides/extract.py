@@ -43,7 +43,10 @@ def extract_ruleset(pdf_bytes: bytes, plan_name: str) -> dict:
     if not settings.ANTHROPIC_API_KEY:
         raise ValueError("ANTHROPIC_API_KEY is not configured")
 
-    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+    headers = {}
+    if settings.ANTHROPIC_WORKSPACE_ID:
+        headers["anthropic-workspace-id"] = settings.ANTHROPIC_WORKSPACE_ID
+    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY, default_headers=headers or None)
     b64 = base64.standard_b64encode(pdf_bytes).decode("ascii")
 
     # ponytail: single-shot PDF document block. Claude accepts PDFs up to 32MB /

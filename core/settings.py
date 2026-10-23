@@ -173,6 +173,9 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get("MAX_UPLOAD_BYTES", 30 * 1024 *
 # Anthropic / Claude companion-guide extraction.
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-8")
+# Required only for user-scoped keys (sk-ant-usr-…); workspace-scoped keys
+# (sk-ant-api03-…) don't need it.
+ANTHROPIC_WORKSPACE_ID = os.environ.get("ANTHROPIC_WORKSPACE_ID", "")
 
 
 # Email
