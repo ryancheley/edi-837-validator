@@ -230,11 +230,22 @@ class _Matcher:
             cur.advance()
 
     def _match_nodes(self, nodes, cur: _Cursor, loop_id: str | None) -> None:
-        for node in nodes:
-            if isinstance(node, SegmentSpec):
-                self._match_segment(node, cur, loop_id)
+        # Segment children are matched in declared order; a contiguous run of
+        # sibling loops is matched in *any* order (TR3 nests loops within a
+        # parent but real files order those sub-loops freely, e.g. 2430 before
+        # 2410 at the service-line level).
+        i = 0
+        n = len(nodes)
+        while i < n:
+            if isinstance(nodes[i], SegmentSpec):
+                self._match_segment(nodes[i], cur, loop_id)
+                i += 1
             else:
-                self._match_loop(node, cur)
+                j = i
+                while j < n and isinstance(nodes[j], LoopSpec):
+                    j += 1
+                self._match_loop_run(nodes[i:j], cur)
+                i = j
 
     def _seg_matches(self, segspec: SegmentSpec, seg: Segment | None) -> bool:
         if seg is None or seg.id != segspec.id:
@@ -274,25 +285,33 @@ class _Matcher:
                     return found
         return None
 
-    def _match_loop(self, loopspec: LoopSpec, cur: _Cursor) -> None:
-        trigger = self._first_segment(loopspec)
-        count = 0
-        limit = loopspec.repeat or 10**9
-        while (
-            count < limit
-            and trigger is not None
-            and self._seg_matches(trigger, cur.current())
-        ):
-            self._match_nodes(loopspec.children, cur, loop_id=loopspec.id)
-            count += 1
-        if count == 0 and loopspec.usage == "R":
-            self.result.add(
-                ValidationError(
-                    "STRUCT.LOOP.MISSING",
-                    f"Required loop {loopspec.id} ({loopspec.name}) is missing",
-                    loop=loopspec.id,
+    def _match_loop_run(self, loops: list[LoopSpec], cur: _Cursor) -> None:
+        # Greedily match whichever sibling loop's trigger matches the current
+        # segment, respecting each loop's repeat limit, until none match.
+        counts = [0] * len(loops)
+        while True:
+            matched = False
+            for idx, loopspec in enumerate(loops):
+                limit = loopspec.repeat or 10**9
+                if counts[idx] >= limit:
+                    continue
+                trigger = self._first_segment(loopspec)
+                if trigger is not None and self._seg_matches(trigger, cur.current()):
+                    self._match_nodes(loopspec.children, cur, loop_id=loopspec.id)
+                    counts[idx] += 1
+                    matched = True
+                    break
+            if not matched:
+                break
+        for idx, loopspec in enumerate(loops):
+            if counts[idx] == 0 and loopspec.usage == "R":
+                self.result.add(
+                    ValidationError(
+                        "STRUCT.LOOP.MISSING",
+                        f"Required loop {loopspec.id} ({loopspec.name}) is missing",
+                        loop=loopspec.id,
+                    )
                 )
-            )
 
     # ----- element-level validation ---------------------------------------- #
     def _validate_elements(self, seg: Segment, segspec: SegmentSpec, loop_id: str | None) -> None:

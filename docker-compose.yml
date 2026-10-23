@@ -27,6 +27,7 @@ services:
       POSTGRES_PORT: "5432"
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-4-8}
+      ANTHROPIC_WORKSPACE_ID: ${ANTHROPIC_WORKSPACE_ID:-}
     volumes:
       - media:/app/media
     ports:

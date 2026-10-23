@@ -7,7 +7,7 @@
       "elements": [
         {"position": 1, "ref": "ST01", "name": "Transaction Set ID", "usage": "R", "data_type": "ID", "codes": ["837"]},
         {"position": 2, "ref": "ST02", "name": "Transaction Set Control Number", "usage": "R", "data_type": "AN", "min_len": 4, "max_len": 9},
-        {"position": 3, "ref": "ST03", "name": "Implementation Convention Reference", "usage": "R", "data_type": "AN", "codes": ["005010X222A1"]}
+        {"position": 3, "ref": "ST03", "name": "Implementation Convention Reference", "usage": "R", "data_type": "AN", "codes": ["005010X222A1", "005010X222A2"]}
       ]
     },
     {
@@ -57,6 +57,8 @@
            {"position": 3, "ref": "HL03", "usage": "R", "data_type": "ID", "codes": ["20"]},
            {"position": 4, "ref": "HL04", "usage": "R", "data_type": "ID", "codes": ["0", "1"]}
          ]},
+        {"id": "PRV", "name": "Billing Provider Specialty", "usage": "S"},
+        {"id": "CUR", "name": "Foreign Currency Information", "usage": "S"},
         {
           "type": "loop", "id": "2010AA", "name": "Billing Provider Name", "usage": "R", "repeat": 1,
           "children": [
@@ -73,7 +75,26 @@
                {"position": 1, "ref": "N401", "name": "City", "usage": "R", "data_type": "AN", "min_len": 2, "max_len": 30},
                {"position": 2, "ref": "N402", "name": "State", "usage": "R", "data_type": "ID", "min_len": 2, "max_len": 2},
                {"position": 3, "ref": "N403", "name": "Postal Code", "usage": "R", "data_type": "ID", "min_len": 3, "max_len": 15}
-             ]}
+             ]},
+            {"id": "REF", "name": "Billing Provider Identifier", "usage": "S", "max_use": 0},
+            {"id": "PER", "name": "Billing Provider Contact", "usage": "S", "max_use": 0}
+          ]
+        },
+        {
+          "type": "loop", "id": "2010AB", "name": "Pay-To Address Name", "usage": "S", "repeat": 1,
+          "children": [
+            {"id": "NM1", "name": "Pay-To Address Name", "usage": "S", "trigger": {"NM101": "87"}},
+            {"id": "N3", "name": "Pay-To Address", "usage": "S"},
+            {"id": "N4", "name": "Pay-To City/State/ZIP", "usage": "S"}
+          ]
+        },
+        {
+          "type": "loop", "id": "2010AC", "name": "Pay-To Plan Name", "usage": "S", "repeat": 1,
+          "children": [
+            {"id": "NM1", "name": "Pay-To Plan Name", "usage": "S", "trigger": {"NM101": "PE"}},
+            {"id": "N3", "name": "Pay-To Plan Address", "usage": "S"},
+            {"id": "N4", "name": "Pay-To Plan City/State/ZIP", "usage": "S"},
+            {"id": "REF", "name": "Pay-To Plan Identifier", "usage": "S", "max_use": 0}
           ]
         },
         {
@@ -90,6 +111,7 @@
                {"position": 1, "ref": "SBR01", "name": "Payer Responsibility", "usage": "R", "data_type": "ID", "codes": ["A", "B", "C", "D", "E", "F", "G", "H", "P", "S", "T", "U"]},
                {"position": 9, "ref": "SBR09", "name": "Claim Filing Indicator", "usage": "S", "data_type": "ID", "codes": ["09", "11", "12", "13", "14", "15", "16", "17", "AM", "BL", "CH", "CI", "DS", "FI", "HM", "LM", "MA", "MB", "MC", "OF", "TV", "VA", "WC", "ZZ"]}
              ]},
+            {"id": "PAT", "name": "Patient Information", "usage": "S"},
             {
               "type": "loop", "id": "2010BA", "name": "Subscriber Name", "usage": "R", "repeat": 1,
               "children": [
@@ -98,7 +120,11 @@
                    {"position": 1, "ref": "NM101", "usage": "R", "data_type": "ID", "codes": ["IL"]},
                    {"position": 2, "ref": "NM102", "usage": "R", "data_type": "ID", "codes": ["1", "2"]},
                    {"position": 3, "ref": "NM103", "name": "Subscriber Last Name", "usage": "R", "data_type": "AN", "min_len": 1, "max_len": 60}
-                 ]}
+                 ]},
+                {"id": "N3", "name": "Subscriber Address", "usage": "S"},
+                {"id": "N4", "name": "Subscriber City/State/ZIP", "usage": "S"},
+                {"id": "DMG", "name": "Subscriber Demographic Information", "usage": "S"},
+                {"id": "REF", "name": "Subscriber Identifier", "usage": "S", "max_use": 0}
               ]
             },
             {
@@ -112,30 +138,235 @@
                    {"position": 8, "ref": "NM108", "usage": "R", "data_type": "ID", "codes": ["PI", "XV"]},
                    {"position": 9, "ref": "NM109", "name": "Payer Identifier", "usage": "R", "data_type": "AN", "min_len": 2, "max_len": 80}
                  ]},
+                {"id": "N3", "name": "Payer Address", "usage": "S"},
+                {"id": "N4", "name": "Payer City/State/ZIP", "usage": "S"},
+                {"id": "REF", "name": "Payer Identifier", "usage": "S", "max_use": 0}
+              ]
+            },
+            {
+              "type": "loop", "id": "2000C", "name": "Patient Hierarchical Level", "usage": "S", "repeat": 0,
+              "children": [
+                {"id": "HL", "name": "Patient HL", "usage": "S", "trigger": {"HL03": "23"}},
+                {"id": "PAT", "name": "Patient Information", "usage": "S"},
                 {
-                  "type": "loop", "id": "2300", "name": "Claim Information", "usage": "R", "repeat": 100,
+                  "type": "loop", "id": "2010CA", "name": "Patient Name", "usage": "S", "repeat": 1,
                   "children": [
-                    {"id": "CLM", "name": "Claim Information", "usage": "R",
-                     "elements": [
-                       {"position": 1, "ref": "CLM01", "name": "Patient Control Number", "usage": "R", "data_type": "AN", "min_len": 1, "max_len": 38},
-                       {"position": 2, "ref": "CLM02", "name": "Total Claim Charge Amount", "usage": "R", "data_type": "R"},
-                       {"position": 5, "ref": "CLM05", "name": "Health Care Service Location", "usage": "R", "components": [
-                         {"position": 1, "ref": "CLM05-1", "name": "Place of Service Code", "usage": "R", "data_type": "ID", "codeset": "place_of_service"},
-                         {"position": 2, "ref": "CLM05-2", "name": "Facility Code Qualifier", "usage": "R", "data_type": "ID", "codes": ["B"]},
-                         {"position": 3, "ref": "CLM05-3", "name": "Claim Frequency Code", "usage": "R", "data_type": "ID", "min_len": 1, "max_len": 1}
-                       ]}
-                     ]},
+                    {"id": "NM1", "name": "Patient Name", "usage": "S", "trigger": {"NM101": "QC"}},
+                    {"id": "N3", "name": "Patient Address", "usage": "S"},
+                    {"id": "N4", "name": "Patient City/State/ZIP", "usage": "S"},
+                    {"id": "DMG", "name": "Patient Demographic Information", "usage": "S"},
+                    {"id": "REF", "name": "Patient Identifier", "usage": "S", "max_use": 0}
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "loop", "id": "2300", "name": "Claim Information", "usage": "R", "repeat": 100,
+              "children": [
+                {"id": "CLM", "name": "Claim Information", "usage": "R",
+                 "elements": [
+                   {"position": 1, "ref": "CLM01", "name": "Patient Control Number", "usage": "R", "data_type": "AN", "min_len": 1, "max_len": 38},
+                   {"position": 2, "ref": "CLM02", "name": "Total Claim Charge Amount", "usage": "R", "data_type": "R"},
+                   {"position": 5, "ref": "CLM05", "name": "Health Care Service Location", "usage": "R", "components": [
+                     {"position": 1, "ref": "CLM05-1", "name": "Place of Service Code", "usage": "R", "data_type": "ID", "codeset": "place_of_service"},
+                     {"position": 2, "ref": "CLM05-2", "name": "Facility Code Qualifier", "usage": "R", "data_type": "ID", "codes": ["B"]},
+                     {"position": 3, "ref": "CLM05-3", "name": "Claim Frequency Code", "usage": "R", "data_type": "ID", "min_len": 1, "max_len": 1}
+                   ]}
+                 ]},
+                {"id": "DTP", "name": "Claim Dates", "usage": "S", "max_use": 0},
+                {"id": "PWK", "name": "Claim Supplemental Information", "usage": "S", "max_use": 0},
+                {"id": "CN1", "name": "Contract Information", "usage": "S"},
+                {"id": "AMT", "name": "Claim Amounts", "usage": "S", "max_use": 0},
+                {"id": "REF", "name": "Claim Identifiers", "usage": "S", "max_use": 0},
+                {"id": "NTE", "name": "Claim Note", "usage": "S", "max_use": 0},
+                {"id": "HI", "name": "Health Care Diagnosis Codes", "usage": "S", "max_use": 0},
+                {
+                  "type": "loop", "id": "2310A", "name": "Referring Provider Name", "usage": "S", "repeat": 0,
+                  "children": [
+                    {"id": "NM1", "name": "Referring Provider", "usage": "S", "trigger": {"NM101": "DN"}},
+                    {"id": "REF", "usage": "S", "max_use": 0}
+                  ]
+                },
+                {
+                  "type": "loop", "id": "2310B", "name": "Rendering Provider Name", "usage": "S", "repeat": 1,
+                  "children": [
+                    {"id": "NM1", "name": "Rendering Provider", "usage": "S", "trigger": {"NM101": "82"}},
+                    {"id": "PRV", "usage": "S"},
+                    {"id": "REF", "usage": "S", "max_use": 0}
+                  ]
+                },
+                {
+                  "type": "loop", "id": "2310C", "name": "Service Facility Location Name", "usage": "S", "repeat": 1,
+                  "children": [
+                    {"id": "NM1", "name": "Service Facility Location", "usage": "S", "trigger": {"NM101": "77"}},
+                    {"id": "N3", "usage": "S"},
+                    {"id": "N4", "usage": "S"},
+                    {"id": "REF", "usage": "S", "max_use": 0}
+                  ]
+                },
+                {
+                  "type": "loop", "id": "2310D", "name": "Supervising Provider Name", "usage": "S", "repeat": 1,
+                  "children": [
+                    {"id": "NM1", "name": "Supervising Provider", "usage": "S", "trigger": {"NM101": "DQ"}},
+                    {"id": "REF", "usage": "S", "max_use": 0}
+                  ]
+                },
+                {
+                  "type": "loop", "id": "2320", "name": "Other Subscriber Information", "usage": "S", "repeat": 0,
+                  "children": [
+                    {"id": "SBR", "name": "Other Subscriber Information", "usage": "S"},
+                    {"id": "CAS", "name": "Claim Level Adjustments", "usage": "S", "max_use": 0},
+                    {"id": "AMT", "name": "COB Amounts", "usage": "S", "max_use": 0},
+                    {"id": "OI", "name": "Other Insurance Coverage Information", "usage": "S"},
+                    {"id": "MOA", "name": "Outpatient Adjudication Information", "usage": "S"},
                     {
-                      "type": "loop", "id": "2400", "name": "Service Line", "usage": "R", "repeat": 50,
+                      "type": "loop", "id": "2330A", "name": "Other Subscriber Name", "usage": "S", "repeat": 1,
                       "children": [
-                        {"id": "LX", "name": "Service Line Number", "usage": "R",
-                         "elements": [{"position": 1, "ref": "LX01", "usage": "R", "data_type": "N"}]},
-                        {"id": "SV1", "name": "Professional Service", "usage": "R",
-                         "elements": [
-                           {"position": 2, "ref": "SV102", "name": "Line Item Charge Amount", "usage": "R", "data_type": "R"},
-                           {"position": 3, "ref": "SV103", "name": "Unit Basis", "usage": "R", "data_type": "ID", "codes": ["MJ", "UN"]},
-                           {"position": 4, "ref": "SV104", "name": "Service Unit Count", "usage": "R", "data_type": "R"}
-                         ]}
+                        {"id": "NM1", "usage": "S", "trigger": {"NM101": "IL"}},
+                        {"id": "N3", "usage": "S"},
+                        {"id": "N4", "usage": "S"},
+                        {"id": "REF", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2330B", "name": "Other Payer Name", "usage": "S", "repeat": 1,
+                      "children": [
+                        {"id": "NM1", "usage": "S", "trigger": {"NM101": "PR"}},
+                        {"id": "N3", "usage": "S"},
+                        {"id": "N4", "usage": "S"},
+                        {"id": "DTP", "usage": "S", "max_use": 0},
+                        {"id": "REF", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2330C", "name": "Other Payer Referring Provider", "usage": "S", "repeat": 0,
+                      "children": [
+                        {"id": "NM1", "usage": "S", "trigger": {"NM101": "DN"}},
+                        {"id": "REF", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2330D", "name": "Other Payer Rendering Provider", "usage": "S", "repeat": 1,
+                      "children": [
+                        {"id": "NM1", "usage": "S", "trigger": {"NM101": "82"}},
+                        {"id": "REF", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2330E", "name": "Other Payer Service Facility", "usage": "S", "repeat": 1,
+                      "children": [
+                        {"id": "NM1", "usage": "S", "trigger": {"NM101": "P3"}},
+                        {"id": "REF", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2330F", "name": "Other Payer Supervising Provider", "usage": "S", "repeat": 1,
+                      "children": [
+                        {"id": "NM1", "usage": "S", "trigger": {"NM101": "77"}},
+                        {"id": "REF", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2330G", "name": "Other Payer Supervising Provider 2", "usage": "S", "repeat": 1,
+                      "children": [
+                        {"id": "NM1", "usage": "S", "trigger": {"NM101": "DQ"}},
+                        {"id": "REF", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2330H", "name": "Other Payer Billing Provider", "usage": "S", "repeat": 1,
+                      "children": [
+                        {"id": "NM1", "usage": "S", "trigger": {"NM101": "85"}},
+                        {"id": "REF", "usage": "S", "max_use": 0}
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "loop", "id": "2400", "name": "Service Line", "usage": "R", "repeat": 50,
+                  "children": [
+                    {"id": "LX", "name": "Service Line Number", "usage": "R",
+                     "elements": [{"position": 1, "ref": "LX01", "usage": "R", "data_type": "N"}]},
+                    {"id": "SV1", "name": "Professional Service", "usage": "R",
+                     "elements": [
+                       {"position": 2, "ref": "SV102", "name": "Line Item Charge Amount", "usage": "R", "data_type": "R"},
+                       {"position": 3, "ref": "SV103", "name": "Unit Basis", "usage": "R", "data_type": "ID", "codes": ["MJ", "UN"]},
+                       {"position": 4, "ref": "SV104", "name": "Service Unit Count", "usage": "R", "data_type": "R"}
+                     ]},
+                    {"id": "PWK", "name": "Line Supplemental Information", "usage": "S", "max_use": 0},
+                    {"id": "DTP", "name": "Service Line Dates", "usage": "S", "max_use": 0},
+                    {"id": "QTY", "name": "Anesthesia Quantity", "usage": "S", "max_use": 0},
+                    {"id": "MEA", "name": "Test Result", "usage": "S", "max_use": 0},
+                    {"id": "REF", "name": "Line Identifiers", "usage": "S", "max_use": 0},
+                    {"id": "AMT", "name": "Line Amounts", "usage": "S", "max_use": 0},
+                    {"id": "NTE", "name": "Line Note", "usage": "S", "max_use": 0},
+                    {"id": "PS1", "name": "Purchased Service Information", "usage": "S"},
+                    {"id": "HCP", "name": "Line Pricing/Repricing Information", "usage": "S"},
+                    {
+                      "type": "loop", "id": "2410", "name": "Drug Identification", "usage": "S", "repeat": 0,
+                      "children": [
+                        {"id": "LIN", "usage": "S"},
+                        {"id": "CTP", "usage": "S"},
+                        {"id": "REF", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2420A", "name": "Rendering Provider Name", "usage": "S", "repeat": 1,
+                      "children": [
+                        {"id": "NM1", "usage": "S", "trigger": {"NM101": "82"}},
+                        {"id": "PRV", "usage": "S"},
+                        {"id": "N3", "usage": "S"},
+                        {"id": "N4", "usage": "S"},
+                        {"id": "REF", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2420B", "name": "Purchased Service Provider Name", "usage": "S", "repeat": 1,
+                      "children": [
+                        {"id": "NM1", "usage": "S", "trigger": {"NM101": "QB"}},
+                        {"id": "REF", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2420C", "name": "Service Facility Location Name", "usage": "S", "repeat": 1,
+                      "children": [
+                        {"id": "NM1", "usage": "S", "trigger": {"NM101": "77"}},
+                        {"id": "N3", "usage": "S"},
+                        {"id": "N4", "usage": "S"},
+                        {"id": "REF", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2420D", "name": "Supervising Provider Name", "usage": "S", "repeat": 1,
+                      "children": [
+                        {"id": "NM1", "usage": "S", "trigger": {"NM101": "DQ"}},
+                        {"id": "REF", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2420E", "name": "Ordering Provider Name", "usage": "S", "repeat": 1,
+                      "children": [
+                        {"id": "NM1", "usage": "S", "trigger": {"NM101": "DK"}},
+                        {"id": "N3", "usage": "S"},
+                        {"id": "N4", "usage": "S"},
+                        {"id": "REF", "usage": "S", "max_use": 0},
+                        {"id": "PER", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2430", "name": "Line Adjudication Information", "usage": "S", "repeat": 0,
+                      "children": [
+                        {"id": "SVD", "usage": "S"},
+                        {"id": "CAS", "usage": "S", "max_use": 0},
+                        {"id": "DTP", "usage": "S", "max_use": 0},
+                        {"id": "AMT", "usage": "S", "max_use": 0}
+                      ]
+                    },
+                    {
+                      "type": "loop", "id": "2440", "name": "Form Identification Code", "usage": "S", "repeat": 0,
+                      "children": [
+                        {"id": "LQ", "usage": "S"},
+                        {"id": "FRM", "usage": "S", "max_use": 0}
                       ]
                     }
                   ]
