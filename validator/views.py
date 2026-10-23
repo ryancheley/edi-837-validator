@@ -1,7 +1,10 @@
+import csv
+import io
 import threading
 
 from django.contrib.auth.decorators import login_required
 from django.db import connection
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -47,14 +50,18 @@ def validate_view(request):
     result = engine.validate(raw, overlay=overlay)
 
     # PHI: persist only structured results and metadata, never the raw 837.
+    summary = result.summary()
     ValidationRun.objects.create(
         user=request.user if request.user.is_authenticated else None,
         plan=plan,
         txn_type=result.txn_type or "",
         filename=upload.name,
         error_count=result.error_count,
-        summary=result.summary(),
+        summary=summary,
     )
+    # Stash the structured findings (no raw claim) so the results page can offer
+    # a JSON/CSV download of what the user is currently looking at.
+    request.session["last_validation"] = {"filename": upload.name, "summary": summary}
 
     context = {
         "plans": plans,
@@ -72,6 +79,38 @@ def _group_by_loop(errors):
     for err in errors:
         groups.setdefault(err.loop or "Envelope / header", []).append(err)
     return groups
+
+
+_CSV_COLUMNS = ["rule_id", "severity", "loop", "segment_id", "segment_pos", "element_ref", "message"]
+
+
+@login_required
+def export_findings(request, fmt):
+    """Download the most recent validation's findings as JSON or CSV.
+
+    Reads the session stash written by ``validate_view`` — structured findings
+    only, never raw claim content.
+    """
+    stash = request.session.get("last_validation")
+    if not stash:
+        raise Http404("No validation results to export; validate a file first.")
+    summary = stash["summary"]
+    base = (stash.get("filename") or "validation").rsplit(".", 1)[0]
+
+    if fmt == "json":
+        resp = JsonResponse(summary, json_dumps_params={"indent": 2})
+        resp["Content-Disposition"] = f'attachment; filename="{base}-findings.json"'
+        return resp
+    if fmt == "csv":
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(_CSV_COLUMNS)
+        for finding in summary.get("findings", []):
+            writer.writerow([finding.get(col, "") for col in _CSV_COLUMNS])
+        resp = HttpResponse(buf.getvalue(), content_type="text/csv")
+        resp["Content-Disposition"] = f'attachment; filename="{base}-findings.csv"'
+        return resp
+    raise Http404("Unknown export format")
 
 
 # --------------------------------------------------------------------------- #
