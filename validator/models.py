@@ -2,6 +2,32 @@ from django.conf import settings
 from django.db import models
 
 
+class SiteConfiguration(models.Model):
+    """Singleton site-wide settings, editable in the Django admin."""
+
+    show_phi_warning = models.BooleanField(
+        default=True,
+        verbose_name='Show "not HIPAA compliant" banner',
+        help_text="When on, every page shows a banner warning users not to upload PHI.",
+    )
+
+    class Meta:
+        verbose_name = "Site configuration"
+        verbose_name_plural = "Site configuration"
+
+    def __str__(self) -> str:
+        return "Site configuration"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  # enforce a single row
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls) -> "SiteConfiguration":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 class Plan(models.Model):
     """A payer/plan whose companion guide adds requirements on top of the TR3."""
 
