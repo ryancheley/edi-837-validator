@@ -74,6 +74,32 @@ def test_validate_with_active_plan_overlay(client_in):
     assert b"SBR09" in resp.content
 
 
+def test_export_findings_json_and_csv(client_in):
+    body = _p_body()
+    body[body.index("BHT*0019*00*REF123*20210101*1253*CH")] = "BHT*0019*00*REF123*20210101*1253*XX"
+    fh = io.BytesIO(_edi(body).encode())
+    fh.name = "bad.837"
+    client_in.post("/", {"edi_file": fh})  # stashes findings in the session
+
+    j = client_in.get("/export/json/")
+    assert j.status_code == 200
+    assert j["Content-Type"] == "application/json"
+    assert "attachment" in j["Content-Disposition"] and "bad-findings.json" in j["Content-Disposition"]
+    assert any(f["rule_id"] == "ELEM.CODE" for f in j.json()["findings"])
+
+    c = client_in.get("/export/csv/")
+    assert c.status_code == 200
+    assert c["Content-Type"] == "text/csv"
+    text = c.content.decode()
+    assert text.splitlines()[0] == "rule_id,severity,loop,segment_id,segment_pos,element_ref,message"
+    assert "ELEM.CODE" in text
+
+
+def test_export_without_validation_is_404(client_in):
+    assert client_in.get("/export/json/").status_code == 404
+    assert client_in.get("/export/bogus/").status_code == 404
+
+
 def test_plan_create_flow(client_in):
     resp = client_in.post("/plans/new/", {"name": "BlueCo", "payer_id": "12345", "notes": ""})
     assert resp.status_code == 302
