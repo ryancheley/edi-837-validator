@@ -147,6 +147,11 @@ def plan_list(request):
     return render(request, "validator/plans.html", {"plans": Plan.objects.all().order_by("name")})
 
 
+@login_required
+def help_page(request):
+    return render(request, "validator/help.html")
+
+
 # --------------------------------------------------------------------------- #
 # Validation history (ValidationRun audit records — structured findings only)
 # --------------------------------------------------------------------------- #

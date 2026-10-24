@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Help · EDI 837 Validator{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-2">Help &amp; documentation</h1>
+<p class="text-slate-500 mb-8">How to validate claim files, work with plans and companion guides, and read the results.</p>
+
+<nav aria-label="Contents" class="bg-white rounded-lg border border-slate-200 p-4 mb-8 text-sm">
+  <p class="font-medium mb-2">On this page</p>
+  <ul class="grid sm:grid-cols-2 gap-1 text-sky-700">
+    <li><a href="#validating" class="hover:underline">Validating a claim</a></li>
+    <li><a href="#results" class="hover:underline">Reading the results</a></li>
+    <li><a href="#findings" class="hover:underline">Finding codes</a></li>
+    <li><a href="#plans" class="hover:underline">Plans &amp; companion guides</a></li>
+    <li><a href="#history" class="hover:underline">History</a></li>
+    <li><a href="#privacy" class="hover:underline">Data &amp; privacy (PHI)</a></li>
+  </ul>
+</nav>
+
+<section id="validating" class="bg-white rounded-lg border border-slate-200 p-6 mb-6">
+  <h2 class="text-lg font-semibold mb-3">Validating a claim</h2>
+  <ol class="list-decimal ml-5 space-y-2 text-sm text-slate-700">
+    <li>On the <a href="{% url 'validate' %}" class="text-sky-700 hover:underline">Validate</a> page, choose an <strong>837P</strong> (professional), <strong>837I</strong> (institutional), or <strong>837D</strong> (dental) file. The transaction type is detected automatically from the file.</li>
+    <li>Optionally pick a <strong>plan</strong> to also check the file against that payer's companion-guide rules. Leave it on <em>Base TR3 only</em> to validate against the standard implementation guide alone.</li>
+    <li>Select <strong>Validate</strong>. Results appear below the form, grouped by loop.</li>
+  </ol>
+  <p class="text-xs text-slate-400 mt-3">Claim files are validated in memory and are never stored — see <a href="#privacy" class="hover:underline">Data &amp; privacy</a>. Maximum file size is 10&nbsp;MB.</p>
+</section>
+
+<section id="results" class="bg-white rounded-lg border border-slate-200 p-6 mb-6">
+  <h2 class="text-lg font-semibold mb-3">Reading the results</h2>
+  <ul class="list-disc ml-5 space-y-2 text-sm text-slate-700">
+    <li>Each finding shows its <strong>severity</strong> (<span class="font-semibold text-red-800">Error</span> or <span class="font-semibold text-amber-900">Warning</span>), a stable <strong>finding code</strong>, the message, and the segment/element it refers to.</li>
+    <li><strong>Errors</strong> are spec violations that make the file invalid. <strong>Warnings</strong> are advisory — e.g. a segment the validator could not place — and do not count toward the error total.</li>
+    <li>The offending <strong>segment text</strong> is shown beneath each finding so you can locate it in your file without counting segments.</li>
+    <li>Use <strong>Download JSON</strong> or <strong>Download CSV</strong> to export the findings for sharing or triage.</li>
+  </ul>
+</section>
+
+<section id="findings" class="bg-white rounded-lg border border-slate-200 p-6 mb-6">
+  <h2 class="text-lg font-semibold mb-3">Finding codes</h2>
+  <p class="text-sm text-slate-700 mb-3">Every finding carries a stable code whose prefix tells you the kind of problem:</p>
+  <table class="w-full text-sm border-collapse">
+    <thead>
+      <tr class="text-left border-b border-slate-200">
+        <th class="py-1 pr-4 font-medium">Prefix</th><th class="py-1 font-medium">Meaning</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <tr><td class="py-1 pr-4 font-mono text-xs">ENV.*</td><td class="py-1">Envelope / control-number problems (missing ISA/GS/ST/SE, count or control-number mismatch)</td></tr>
+      <tr><td class="py-1 pr-4 font-mono text-xs">TXN.UNKNOWN</td><td class="py-1">Could not identify an 837P/837I/837D transaction</td></tr>
+      <tr><td class="py-1 pr-4 font-mono text-xs">STRUCT.SEG.MISSING</td><td class="py-1">A required segment is absent</td></tr>
+      <tr><td class="py-1 pr-4 font-mono text-xs">STRUCT.LOOP.MISSING</td><td class="py-1">A required loop is absent</td></tr>
+      <tr><td class="py-1 pr-4 font-mono text-xs">STRUCT.UNEXPECTED</td><td class="py-1">A segment that doesn't fit the spec at that position (warning)</td></tr>
+      <tr><td class="py-1 pr-4 font-mono text-xs">ELEM.REQUIRED</td><td class="py-1">A required element or component is empty</td></tr>
+      <tr><td class="py-1 pr-4 font-mono text-xs">ELEM.MINLEN / ELEM.MAXLEN</td><td class="py-1">Element length out of range</td></tr>
+      <tr><td class="py-1 pr-4 font-mono text-xs">ELEM.TYPE</td><td class="py-1">Wrong data type (numeric / decimal / date / time)</td></tr>
+      <tr><td class="py-1 pr-4 font-mono text-xs">ELEM.CODE</td><td class="py-1">Value not in the allowed code set (base spec or plan overlay)</td></tr>
+      <tr><td class="py-1 pr-4 font-mono text-xs">PARSE.FATAL</td><td class="py-1">The file could not be parsed as X12</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="plans" class="bg-white rounded-lg border border-slate-200 p-6 mb-6">
+  <h2 class="text-lg font-semibold mb-3">Plans &amp; companion guides</h2>
+  <p class="text-sm text-slate-700 mb-3">A <strong>plan</strong> represents a payer whose companion guide adds requirements on top of the standard TR3 rules — tightening situational elements to required, or restricting which codes are allowed.</p>
+  <ol class="list-decimal ml-5 space-y-2 text-sm text-slate-700">
+    <li>Create a plan from <a href="{% url 'plans' %}" class="text-sky-700 hover:underline">Plans → New plan</a> (name and payer id).</li>
+    <li>On the plan page, upload the payer's companion-guide <strong>PDF</strong>. Extraction runs in the background; the status chip updates automatically (<em>Pending → Extracting → Needs review</em>).</li>
+    <li>If extraction fails, select <strong>Retry</strong> to run it again against the same PDF — no need to re-upload.</li>
+    <li>Open the draft rule set, review and edit the rules if needed, tick <strong>Activate</strong>, and save. The rule set is only applied to validation once activated.</li>
+  </ol>
+  <p class="text-sm text-slate-700 mt-3">A plan can hold separate guides for different transaction types. When you validate a file, the plan applies the active rule set whose transaction types match the file — so an 837P upload uses the plan's 837P guide and an 837I upload its 837I guide.</p>
+</section>
+
+<section id="history" class="bg-white rounded-lg border border-slate-200 p-6 mb-6">
+  <h2 class="text-lg font-semibold mb-3">History</h2>
+  <p class="text-sm text-slate-700">The <a href="{% url 'history' %}" class="text-sky-700 hover:underline">History</a> page lists your past validations with their date, transaction type, plan, and error count. Open any run to see its findings again. Only the structured results are kept — never the uploaded file.</p>
+</section>
+
+<section id="privacy" class="bg-white rounded-lg border border-slate-200 p-6 mb-6">
+  <h2 class="text-lg font-semibold mb-3">Data &amp; privacy (PHI)</h2>
+  <p class="text-sm text-slate-700">X12 837 files contain protected health information. Uploaded claim files are validated <strong>in memory and are not stored</strong>; only structured findings and metadata (filename, counts) are recorded for your history. Companion-guide PDFs are stored so they can be re-extracted. Heed any banner on the site about its compliance status before uploading real PHI.</p>
+</section>
+{% endblock %}
