@@ -45,7 +45,10 @@ def validate_view(request):
     plan_id = request.POST.get("plan")
     if plan_id:
         plan = get_object_or_404(Plan, pk=plan_id)
-        ruleset = plan.active_ruleset()
+        # Pick the ruleset matching this file's transaction type, so a plan with
+        # separate 837P/837I guides applies the right one. ponytail: cheap extra
+        # parse to detect the type up front; the engine re-parses in validate().
+        ruleset = plan.active_ruleset(_detect_txn_type(raw))
         if ruleset:
             overlay = schema.to_overlay(ruleset.data)
 
@@ -77,6 +80,14 @@ def validate_view(request):
     }
     template = "validator/_results.html" if request.headers.get("HX-Request") else "validator/validate.html"
     return render(request, template, context)
+
+
+def _detect_txn_type(raw: bytes) -> str | None:
+    """Detect 837P/837I/837D up front so the right plan overlay is chosen."""
+    try:
+        return engine.detect_txn_type(parser.parse(raw))
+    except parser.ParseError:
+        return None
 
 
 def _segment_text(raw: bytes) -> dict[int, str]:
