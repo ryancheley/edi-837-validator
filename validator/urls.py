@@ -10,6 +10,7 @@ urlpatterns = [
     path("history/<int:pk>/", views.history_detail, name="history_detail"),
     path("plans/", views.plan_list, name="plans"),
     path("help/", views.help_page, name="help"),
+    path("report/", views.report_bug, name="report_bug"),
     path("plans/new/", views.plan_create, name="plan_create"),
     path("plans/<int:pk>/", views.plan_detail, name="plan_detail"),
     path("plans/<int:pk>/upload/", views.guide_upload, name="guide_upload"),

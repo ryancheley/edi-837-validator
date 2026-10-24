@@ -11,7 +11,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import GuideUploadForm, PlanForm
+from . import bugreport
+from .forms import GuideUploadForm, PlanForm, ReportBugForm
 from .guides import extract, schema
 from .models import CompanionGuide, Plan, RuleSet, ValidationRun
 from .x12 import engine, parser
@@ -150,6 +151,28 @@ def plan_list(request):
 @login_required
 def help_page(request):
     return render(request, "validator/help.html")
+
+
+@login_required
+def report_bug(request):
+    """File a bug as a GitHub issue, with PHI-free diagnostics in the body."""
+    if not settings.GITHUB_ISSUE_TOKEN:
+        raise Http404("Bug reporting is not configured.")
+    if request.method == "POST":
+        form = ReportBugForm(request.POST)
+        if form.is_valid():
+            diagnostics = bugreport.redact(form.cleaned_data["diagnostics"].strip())
+            body = form.cleaned_data["description"]
+            if diagnostics:
+                body += f"\n\n## Diagnostics\n```\n{diagnostics}\n```"
+            try:
+                url = bugreport.create_issue(form.cleaned_data["title"], body, labels=["bug"])
+            except bugreport.IssueError as exc:
+                return render(request, "validator/report_bug.html", {"form": form, "error": str(exc)})
+            return render(request, "validator/report_bug.html", {"submitted_url": url})
+    else:
+        form = ReportBugForm(initial={"diagnostics": bugreport.telemetry_text(request)})
+    return render(request, "validator/report_bug.html", {"form": form})
 
 
 # --------------------------------------------------------------------------- #

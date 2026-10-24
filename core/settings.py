@@ -176,6 +176,11 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get("MAX_UPLOAD_BYTES", 30 * 1024 *
 # Hard cap on an uploaded 837 claim file (bytes), enforced in the validate view.
 MAX_837_BYTES = int(os.environ.get("MAX_837_BYTES", 10 * 1024 * 1024))
 
+# "Report a bug" → GitHub issue. The feature is enabled only when a token is set
+# (a PAT with issue-write on the repo). Repo defaults to this project.
+GITHUB_ISSUE_TOKEN = os.environ.get("GITHUB_ISSUE_TOKEN", "")
+GITHUB_ISSUE_REPO = os.environ.get("GITHUB_ISSUE_REPO", "ryancheley/edi-837-validator")
+
 # Anthropic / Claude companion-guide extraction.
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-8")
