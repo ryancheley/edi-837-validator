@@ -203,7 +203,8 @@ All configuration is environment-driven.
 | `ANTHROPIC_API_KEY` | Enables companion-guide extraction | empty (extraction disabled) |
 | `ANTHROPIC_WORKSPACE_ID` | Required for user-scoped (`sk-ant-usr-…`) keys | empty |
 | `ANTHROPIC_MODEL` | Extraction model | `claude-opus-4-8` |
-| `MAX_UPLOAD_BYTES` | Max upload size | `31457280` (30 MB) |
+| `MAX_837_BYTES` | Max size of an uploaded 837 claim file | `10485760` (10 MB) |
+| `MAX_UPLOAD_BYTES` | Django request-body cap (`DATA_UPLOAD_MAX_MEMORY_SIZE`); excludes file fields, so it does not limit uploaded 837/PDF files | `31457280` (30 MB) |
 | `MEDIA_ROOT` | Where companion-guide PDFs are stored | `BASE_DIR/media` |
 
 ## Validation findings

@@ -2,6 +2,7 @@ import csv
 import io
 import threading
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import connection
@@ -15,8 +16,6 @@ from .guides import extract, schema
 from .models import CompanionGuide, Plan, RuleSet, ValidationRun
 from .x12 import engine, parser
 from .x12.errors import Severity, ValidationError
-
-MAX_837_BYTES = 10 * 1024 * 1024  # claim files are small; cap defensively
 
 
 @login_required
@@ -32,12 +31,13 @@ def validate_view(request):
             "validator/validate.html",
             {"plans": plans, "error": "Please choose an 837 file to validate."},
         )
-    raw = upload.read(MAX_837_BYTES + 1)
-    if len(raw) > MAX_837_BYTES:
+    max_bytes = settings.MAX_837_BYTES
+    raw = upload.read(max_bytes + 1)
+    if len(raw) > max_bytes:
         return render(
             request,
             "validator/validate.html",
-            {"plans": plans, "error": "File too large (max 10 MB)."},
+            {"plans": plans, "error": f"File too large (max {max_bytes // (1024 * 1024)} MB)."},
         )
 
     plan = None

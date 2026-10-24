@@ -168,8 +168,13 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'validate'
 LOGOUT_REDIRECT_URL = 'login'
 
-# Max upload size for 837 files / companion guides (bytes).
+# Django's request-body cap (bytes). Note: this EXCLUDES multipart file fields,
+# so it does not limit uploaded 837/PDF files — it guards oversized non-file POST
+# bodies. The claim-file cap is MAX_837_BYTES below.
 DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get("MAX_UPLOAD_BYTES", 30 * 1024 * 1024))
+
+# Hard cap on an uploaded 837 claim file (bytes), enforced in the validate view.
+MAX_837_BYTES = int(os.environ.get("MAX_837_BYTES", 10 * 1024 * 1024))
 
 # Anthropic / Claude companion-guide extraction.
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
