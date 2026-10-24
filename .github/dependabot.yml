@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # Keep the SHA-pinned actions in ci.yml current (Dependabot bumps the hash
+  # and the `# vX` comment together, so zizmor's unpinned-uses stays green).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Python dependencies (pyproject.toml + uv.lock). Group minor/patch to cut
+  # PR noise; majors come as their own PRs since they may break.
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      python-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
