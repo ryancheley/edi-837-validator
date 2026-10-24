@@ -1,4 +1,4 @@
-<div class="px-4 py-3 flex items-center justify-between"
+<div id="guide-{{ guide.pk }}" class="px-4 py-3 flex items-center justify-between"
      {% if guide.status == 'pending' or guide.status == 'running' %}
      hx-get="{% url 'guide_status' guide.pk %}" hx-trigger="load delay:2s" hx-swap="outerHTML"
      {% endif %}>
@@ -18,6 +18,10 @@
       <span class="rounded-full bg-green-100 text-green-800 px-3 py-1 text-xs">Active</span>
     {% else %}
       <span class="rounded-full bg-red-100 text-red-800 px-3 py-1 text-xs">Failed</span>
+      <form hx-post="{% url 'guide_retry' guide.pk %}" hx-target="#guide-{{ guide.pk }}" hx-swap="outerHTML" class="inline">
+        {% csrf_token %}
+        <button class="text-sm text-sky-700 hover:underline">Retry</button>
+      </form>
     {% endif %}
     {% if ruleset %}
       <a href="{% url 'ruleset_review' ruleset.pk %}" class="text-sm text-sky-700">Review</a>

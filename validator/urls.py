@@ -13,5 +13,6 @@ urlpatterns = [
     path("plans/<int:pk>/", views.plan_detail, name="plan_detail"),
     path("plans/<int:pk>/upload/", views.guide_upload, name="guide_upload"),
     path("guides/<int:pk>/status/", views.guide_status, name="guide_status"),
+    path("guides/<int:pk>/retry/", views.guide_retry, name="guide_retry"),
     path("rulesets/<int:pk>/review/", views.ruleset_review, name="ruleset_review"),
 ]
