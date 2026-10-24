@@ -11,7 +11,8 @@ Optional `segment_text`: {segment_pos: text} to show the offending segment (live
     <ul class="space-y-1 text-sm">
       {% for e in errs %}
         <li class="flex gap-2">
-          <span class="font-mono text-xs rounded px-1.5 py-0.5 {% if e.severity.value == 'error' %}bg-red-100 text-red-700{% else %}bg-amber-100 text-amber-700{% endif %}">{{ e.rule_id }}</span>
+          <span class="text-xs font-semibold rounded px-1.5 py-0.5 {% if e.severity.value == 'error' %}bg-red-100 text-red-800{% else %}bg-amber-100 text-amber-900{% endif %}">{{ e.severity.value|capfirst }}</span>
+          <span class="font-mono text-xs rounded px-1.5 py-0.5 bg-slate-100 text-slate-700">{{ e.rule_id }}</span>
           <span>
             {{ e.message }}
             <span class="text-slate-400">
