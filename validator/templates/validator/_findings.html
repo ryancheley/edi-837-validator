@@ -1,4 +1,6 @@
-{% comment %}Renders findings grouped by loop. Expects `grouped`: {loop_id: [ValidationError]}.{% endcomment %}
+{% load validator_extras %}
+{% comment %}Renders findings grouped by loop. Expects `grouped`: {loop_id: [ValidationError]}.
+Optional `segment_text`: {segment_pos: text} to show the offending segment (live results only).{% endcomment %}
 <div class="flex items-center gap-4 mb-3 text-xs text-slate-500">
   <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-red-400"></span>error</span>
   <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-400"></span>warning</span>
@@ -15,6 +17,9 @@
             <span class="text-slate-400">
               {% if e.segment_id %}[{{ e.segment_id }}{% if e.segment_pos %}@{{ e.segment_pos }}{% endif %}]{% endif %}
             </span>
+            {% with seg=segment_text|get_item:e.segment_pos %}
+              {% if seg %}<pre class="mt-1 font-mono text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 overflow-x-auto">{{ seg }}</pre>{% endif %}
+            {% endwith %}
           </span>
         </li>
       {% endfor %}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import json
 
 import pytest
 from django.contrib.auth.models import User
@@ -72,6 +73,21 @@ def test_validate_with_active_plan_overlay(client_in):
     resp = client_in.post("/", {"edi_file": fh, "plan": str(plan.pk)})
     assert resp.status_code == 200
     assert b"SBR09" in resp.content
+
+
+def test_results_show_offending_segment_text_without_persisting_it(client_in):
+    body = _p_body()
+    body[body.index("BHT*0019*00*REF123*20210101*1253*CH")] = "BHT*0019*00*REF123*20210101*1253*XX"
+    fh = io.BytesIO(_edi(body).encode())
+    fh.name = "bad.837"
+    resp = client_in.post("/", {"edi_file": fh})
+
+    assert resp.status_code == 200
+    # The offending BHT segment is rendered in the results for the user to locate.
+    assert b"BHT*0019*00*REF123*20210101*1253*XX" in resp.content
+    # PHI: the raw segment/content is NOT written to the audit record.
+    run = ValidationRun.objects.get()
+    assert "REF123" not in json.dumps(run.summary)
 
 
 def test_export_findings_json_and_csv(client_in):
