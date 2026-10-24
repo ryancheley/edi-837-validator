@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Report a bug · EDI 837 Validator{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-2">Report a bug</h1>
+
+{% if submitted_url %}
+  <div class="bg-white rounded-lg border border-slate-200 p-6">
+    <p class="text-green-800 font-medium mb-2">Thanks — your report was filed.</p>
+    <p class="text-sm text-slate-700">Track it here:
+      <a href="{{ submitted_url }}" class="text-sky-700 hover:underline" target="_blank" rel="noopener">{{ submitted_url }}</a>
+    </p>
+    <a href="{% url 'report_bug' %}" class="inline-block mt-4 text-sm text-sky-700 hover:underline">Report another</a>
+  </div>
+{% else %}
+  <p class="text-slate-500 mb-6">This opens an issue in the project's GitHub repository. Diagnostics below are auto-collected and contain no claim data — review and trim them before sending.</p>
+
+  {% if error %}<div class="mb-4 rounded bg-red-100 text-red-800 px-4 py-2 text-sm">Not filed — {{ error }} Your draft is preserved below.</div>{% endif %}
+
+  <form method="post" class="bg-white rounded-lg border border-slate-200 p-6 space-y-4">
+    {% csrf_token %}
+    {% for field in form %}
+      <div>
+        <label for="{{ field.id_for_label }}" class="block text-sm font-medium mb-1">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="text-xs text-slate-400 mt-1">{{ field.help_text }}</p>{% endif %}
+        {% for err in field.errors %}<p class="text-xs text-red-600 mt-1">{{ err }}</p>{% endfor %}
+      </div>
+    {% endfor %}
+    <button class="rounded bg-sky-600 px-4 py-2 text-white hover:bg-sky-700">Submit report</button>
+  </form>
+{% endif %}
+{% endblock %}
