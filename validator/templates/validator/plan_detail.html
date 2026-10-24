@@ -18,7 +18,9 @@
 {% if guides %}
 <div class="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">
   {% for guide in guides %}
-    {% include "validator/_guide_status.html" with guide=guide ruleset=guide.rulesets.last %}
+    <div aria-live="polite">
+      {% include "validator/_guide_status.html" with guide=guide ruleset=guide.rulesets.last %}
+    </div>
   {% endfor %}
 </div>
 {% else %}

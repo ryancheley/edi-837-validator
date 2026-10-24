@@ -75,6 +75,28 @@ def test_validate_with_active_plan_overlay(client_in):
     assert b"SBR09" in resp.content
 
 
+def test_validate_form_is_labelled_and_results_is_a_live_region(client_in):
+    html = client_in.get("/").content
+    assert b'for="edi_file"' in html and b'id="edi_file"' in html
+    assert b'for="plan"' in html and b'id="plan"' in html
+    assert b'aria-live="polite"' in html  # #results announces after an htmx swap
+
+
+def test_findings_convey_severity_as_text_not_color_alone(client_in):
+    body = _p_body()
+    body[body.index("BHT*0019*00*REF123*20210101*1253*CH")] = "BHT*0019*00*REF123*20210101*1253*XX"
+    fh = io.BytesIO(_edi(body).encode())
+    fh.name = "bad.837"
+    resp = client_in.post("/", {"edi_file": fh})
+    assert b"Error" in resp.content  # per-finding severity word (capfirst), not colour alone
+
+
+def test_guide_chip_is_wrapped_in_a_live_region(client_in):
+    plan = Plan.objects.create(name="Acme")
+    CompanionGuide.objects.create(plan=plan, pdf="companion_guides/x.pdf", status="failed", error="boom")
+    assert b'aria-live="polite"' in client_in.get(f"/plans/{plan.pk}/").content
+
+
 def test_results_show_offending_segment_text_without_persisting_it(client_in):
     body = _p_body()
     body[body.index("BHT*0019*00*REF123*20210101*1253*CH")] = "BHT*0019*00*REF123*20210101*1253*XX"
