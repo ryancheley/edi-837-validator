@@ -176,6 +176,8 @@ def detect_txn_type(doc: Document) -> str | None:
         return "837P"
     if "X223" in ref:
         return "837I"
+    if "X224" in ref:
+        return "837D"
     return None
 
 
