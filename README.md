@@ -3,7 +3,8 @@
 [![CI](https://github.com/ryancheley/edi-837-validator/actions/workflows/ci.yml/badge.svg)](https://github.com/ryancheley/edi-837-validator/actions/workflows/ci.yml)
 
 A web tool that validates whether an X12 **837P** (professional,
-`005010X222A1`/`A2`) or **837I** (institutional, `005010X223A2`) health-care
+`005010X222A1`/`A2`), **837I** (institutional, `005010X223A2`), or **837D**
+(dental, `005010X224A2`) health-care
 claim file is constructed correctly, and — optionally — against a specific
 payer/plan's **companion guide**. Companion guides are free-form PDFs, so the
 app uses an LLM (Anthropic / Claude) to draft a structured rule set from the
@@ -37,7 +38,7 @@ Django 6 + htmx + Tailwind, Postgres 18, containerized for deployment to
 
 ## Features
 
-- **Structural + content validation** of 837P/837I: envelope and control-number
+- **Structural + content validation** of 837P/837I/837D: envelope and control-number
   balance (ISA↔IEA, GS↔GE, ST↔SE), loop structure, segment usage/order, element
   usage, data types, and code-value checks.
 - **Full TR3 837P loop tree** with an **any-order sub-loop matcher** — real
@@ -113,7 +114,7 @@ the bundled example claim at `samples/837P-all-fields.edi`.
 
 ## Using the app
 
-1. **Validate a claim** — on the home page, upload an 837P/837I file and
+1. **Validate a claim** — on the home page, upload an 837P/837I/837D file and
    (optionally) pick a plan to validate against. Results are grouped by loop
    with a severity-tagged finding per issue.
 2. **Create a plan** — *Plans → New plan* (name + payer id).
@@ -162,7 +163,7 @@ just check         # or: uv run pytest && uv run ruff check . && uv run ty check
 ```
 
 Tests use **real objects, no mocks**: the engine is exercised with known-good
-and deliberately-mutated 837P/837I fixtures (asserting specific finding IDs), a
+and deliberately-mutated 837P/837I/837D fixtures (asserting specific finding IDs), a
 real-world "all fields" 837P fixture, the companion-guide schema/overlay, and
 view-level flows via the Django test client. CI runs the same gate on every PR.
 
@@ -215,7 +216,7 @@ context:
 | Prefix | Meaning |
 |--------|---------|
 | `ENV.*` | Envelope / control-number problems (missing ISA/GS/ST/SE, count or control-number mismatch) |
-| `TXN.UNKNOWN` | Could not identify an 837P/837I transaction |
+| `TXN.UNKNOWN` | Could not identify an 837P/837I/837D transaction |
 | `STRUCT.SEG.MISSING` | A required segment is absent |
 | `STRUCT.LOOP.MISSING` | A required loop is absent |
 | `STRUCT.UNEXPECTED` | A segment that doesn't fit the spec at that position |
@@ -235,7 +236,7 @@ validator/
     spec.py                 TR3 spec dataclasses + JSON loader
     engine.py               validation + any-order sub-loop matcher
     errors.py               ValidationError / ValidationResult
-    specs/                  837P.json, 837I.json, codesets/
+    specs/                  837P.json, 837I.json, 837D.json, codesets/
     tests/                  engine + all-fields fixture tests
   guides/                   companion-guide extraction
     extract.py              Anthropic PDF -> RuleSet
