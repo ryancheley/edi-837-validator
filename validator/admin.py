@@ -1,6 +1,27 @@
+import json
+
+from django import forms
 from django.contrib import admin
+from django.forms.fields import InvalidJSONInput
 
 from .models import CompanionGuide, Plan, RuleSet, SiteConfiguration, ValidationRun
+
+
+class _PrettyJSONField(forms.JSONField):
+    """Render stored JSON indented in the admin textarea (still editable)."""
+
+    def prepare_value(self, value):
+        if isinstance(value, InvalidJSONInput):
+            return value  # keep the user's raw text so they can fix a syntax error
+        return json.dumps(value, indent=2, ensure_ascii=False, cls=self.encoder)
+
+
+class RuleSetAdminForm(forms.ModelForm):
+    class Meta:
+        model = RuleSet
+        fields = "__all__"
+        field_classes = {"data": _PrettyJSONField}
+        widgets = {"data": forms.Textarea(attrs={"rows": 24, "cols": 100, "style": "font-family: monospace"})}
 
 
 @admin.register(SiteConfiguration)
@@ -29,6 +50,7 @@ class CompanionGuideAdmin(admin.ModelAdmin):
 
 @admin.register(RuleSet)
 class RuleSetAdmin(admin.ModelAdmin):
+    form = RuleSetAdminForm
     list_display = ("guide", "is_active", "reviewed_by", "reviewed_at")
     list_filter = ("is_active",)
 
