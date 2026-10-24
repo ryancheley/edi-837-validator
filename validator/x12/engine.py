@@ -223,6 +223,7 @@ class _Matcher:
                 ValidationError(
                     "STRUCT.UNEXPECTED",
                     f"Unexpected or out-of-order segment {seg.id}",
+                    severity=Severity.WARNING,  # advisory: engine couldn't place it, not a hard spec violation
                     segment_id=seg.id,
                     segment_pos=seg.pos,
                 )

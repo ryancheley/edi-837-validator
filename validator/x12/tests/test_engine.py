@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from validator.x12 import parser
 from validator.x12.engine import detect_txn_type, validate
+from validator.x12.errors import Severity
 
 # ISA is fixed-width (005010); build it from padded fields so it is exactly
 # 106 chars and the component separator / terminator land at the right offsets.
@@ -94,6 +95,19 @@ def test_valid_837p_passes_clean():
     result = validate(_edi(_p_body()))
     assert result.txn_type == "837P"
     assert result.is_valid, result.summary()
+    assert result.warning_count == 0
+
+
+def test_unexpected_segment_is_a_warning_not_an_error():
+    body = _p_body()
+    body.insert(body.index("SV1*HC:99213*150*UN*1") + 1, "ZZZ*999")  # unplaceable segment
+    result = validate(_edi(body))
+    unexpected = [e for e in result.errors if e.rule_id == "STRUCT.UNEXPECTED"]
+    assert unexpected, "expected an unplaceable segment to be reported"
+    assert all(e.severity == Severity.WARNING for e in unexpected)
+    assert result.warning_count >= 1
+    # Warnings must not inflate the error count.
+    assert all(e.rule_id != "STRUCT.UNEXPECTED" for e in result.errors if e.severity == Severity.ERROR)
 
 
 def test_valid_837i_passes_clean():

@@ -47,6 +47,14 @@ class ValidationResult:
         return sum(1 for e in self.errors if e.severity == Severity.ERROR)
 
     @property
+    def warning_count(self) -> int:
+        return sum(1 for e in self.errors if e.severity == Severity.WARNING)
+
+    @property
+    def info_count(self) -> int:
+        return sum(1 for e in self.errors if e.severity == Severity.INFO)
+
+    @property
     def is_valid(self) -> bool:
         return self.error_count == 0
 
@@ -54,6 +62,8 @@ class ValidationResult:
         return {
             "txn_type": self.txn_type,
             "error_count": self.error_count,
+            "warning_count": self.warning_count,
+            "info_count": self.info_count,
             "total_findings": len(self.errors),
             "findings": [e.as_dict() for e in self.errors],
         }
