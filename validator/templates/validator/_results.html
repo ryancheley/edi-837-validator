@@ -12,17 +12,21 @@
          class="text-sm text-sky-600 hover:text-sky-700 hover:underline">Download JSON</a>
       <a href="{% url 'export_findings' 'csv' %}"
          class="text-sm text-sky-600 hover:text-sky-700 hover:underline">Download CSV</a>
-      {% if result.is_valid %}
-        <span class="rounded-full bg-green-100 text-green-800 px-3 py-1 text-sm font-medium">Valid ✓</span>
-      {% else %}
+      {% if result.error_count %}
         <span class="rounded-full bg-red-100 text-red-800 px-3 py-1 text-sm font-medium">{{ result.error_count }} error{{ result.error_count|pluralize }}</span>
+      {% endif %}
+      {% if result.warning_count %}
+        <span class="rounded-full bg-amber-100 text-amber-800 px-3 py-1 text-sm font-medium">{{ result.warning_count }} warning{{ result.warning_count|pluralize }}</span>
+      {% endif %}
+      {% if result.is_valid and not result.warning_count %}
+        <span class="rounded-full bg-green-100 text-green-800 px-3 py-1 text-sm font-medium">Valid ✓</span>
       {% endif %}
     </div>
   </div>
 
-  {% if result.is_valid %}
-    <p class="text-slate-600">No structural, element, or code errors found.</p>
-  {% else %}
+  {% if grouped %}
     {% include "validator/_findings.html" %}
+  {% else %}
+    <p class="text-slate-600">No structural, element, or code errors found.</p>
   {% endif %}
 </div>
