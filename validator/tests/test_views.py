@@ -238,6 +238,18 @@ def test_overlay_selected_by_transaction_type_with_multiple_guides(client_in):
     assert b"SBR09" not in ri.content
 
 
+def test_help_page_renders_with_docs(client_in):
+    resp = client_in.get("/help/")
+    assert resp.status_code == 200
+    assert b"Help &amp; documentation" in resp.content
+    assert b"Finding codes" in resp.content and b"ELEM.CODE" in resp.content
+
+
+def test_help_requires_login(client):
+    resp = client.get("/help/")
+    assert resp.status_code == 302 and "/login" in resp["Location"]
+
+
 def test_plan_create_flow(client_in):
     resp = client_in.post("/plans/new/", {"name": "BlueCo", "payer_id": "12345", "notes": ""})
     assert resp.status_code == 302
