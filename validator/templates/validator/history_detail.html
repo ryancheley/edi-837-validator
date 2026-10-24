@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{% url 'history' %}" class="text-sm text-sky-600 hover:underline">← Back to history</a>
+
+<div class="bg-white rounded-lg border border-slate-200 p-6 mt-4">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h2 class="text-xl font-semibold">{{ run.filename|default:"(unnamed)" }}</h2>
+      <p class="text-sm text-slate-500">
+        {{ run.created_at|date:"Y-m-d H:i" }} ·
+        Transaction: {{ run.txn_type|default:"unidentified" }}
+        {% if run.plan %}· Plan: {{ run.plan.name }}{% endif %}
+      </p>
+    </div>
+    {% if run.error_count %}
+      <span class="rounded-full bg-red-100 text-red-800 px-3 py-1 text-sm font-medium">{{ run.error_count }} error{{ run.error_count|pluralize }}</span>
+    {% else %}
+      <span class="rounded-full bg-green-100 text-green-800 px-3 py-1 text-sm font-medium">Valid ✓</span>
+    {% endif %}
+  </div>
+
+  {% if grouped %}
+    {% include "validator/_findings.html" %}
+  {% else %}
+    <p class="text-slate-600">No structural, element, or code errors found.</p>
+  {% endif %}
+</div>
+{% endblock %}

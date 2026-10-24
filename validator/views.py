@@ -3,6 +3,7 @@ import io
 import threading
 
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db import connection
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -13,6 +14,7 @@ from .forms import GuideUploadForm, PlanForm
 from .guides import extract, schema
 from .models import CompanionGuide, Plan, RuleSet, ValidationRun
 from .x12 import engine
+from .x12.errors import Severity, ValidationError
 
 MAX_837_BYTES = 10 * 1024 * 1024  # claim files are small; cap defensively
 
@@ -119,6 +121,40 @@ def export_findings(request, fmt):
 @login_required
 def plan_list(request):
     return render(request, "validator/plans.html", {"plans": Plan.objects.all().order_by("name")})
+
+
+# --------------------------------------------------------------------------- #
+# Validation history (ValidationRun audit records — structured findings only)
+# --------------------------------------------------------------------------- #
+@login_required
+def history(request):
+    runs = ValidationRun.objects.all() if request.user.is_staff else ValidationRun.objects.filter(user=request.user)
+    page = Paginator(runs.select_related("plan"), 25).get_page(request.GET.get("page"))
+    return render(request, "validator/history.html", {"page_obj": page})
+
+
+@login_required
+def history_detail(request, pk):
+    run = get_object_or_404(ValidationRun, pk=pk)
+    if not request.user.is_staff and run.user_id != request.user.id:
+        raise Http404("No such validation run")
+    findings = [
+        ValidationError(
+            rule_id=f.get("rule_id", ""),
+            message=f.get("message", ""),
+            severity=Severity(f.get("severity", "error")),
+            loop=f.get("loop"),
+            segment_id=f.get("segment_id"),
+            segment_pos=f.get("segment_pos"),
+            element_ref=f.get("element_ref"),
+        )
+        for f in run.summary.get("findings", [])
+    ]
+    return render(
+        request,
+        "validator/history_detail.html",
+        {"run": run, "grouped": _group_by_loop(findings)},
+    )
 
 
 @login_required
