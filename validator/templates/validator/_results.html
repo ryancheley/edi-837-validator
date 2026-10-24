@@ -23,23 +23,6 @@
   {% if result.is_valid %}
     <p class="text-slate-600">No structural, element, or code errors found.</p>
   {% else %}
-    {% for loop_id, errs in grouped.items %}
-      <div class="mb-4">
-        <h3 class="font-medium text-slate-700 border-b border-slate-100 pb-1 mb-2">Loop {{ loop_id }}</h3>
-        <ul class="space-y-1 text-sm">
-          {% for e in errs %}
-            <li class="flex gap-2">
-              <span class="font-mono text-xs rounded px-1.5 py-0.5 {% if e.severity.value == 'error' %}bg-red-100 text-red-700{% else %}bg-amber-100 text-amber-700{% endif %}">{{ e.rule_id }}</span>
-              <span>
-                {{ e.message }}
-                <span class="text-slate-400">
-                  {% if e.segment_id %}[{{ e.segment_id }}{% if e.segment_pos %}@{{ e.segment_pos }}{% endif %}]{% endif %}
-                </span>
-              </span>
-            </li>
-          {% endfor %}
-        </ul>
-      </div>
-    {% endfor %}
+    {% include "validator/_findings.html" %}
   {% endif %}
 </div>

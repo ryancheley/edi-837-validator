@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-6">Validation history</h1>
+
+{% if page_obj.object_list %}
+<div class="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">
+  {% for run in page_obj %}
+    <a href="{% url 'history_detail' run.pk %}" class="flex items-center justify-between px-4 py-3 hover:bg-slate-50">
+      <span class="font-medium">{{ run.filename|default:"(unnamed)" }}</span>
+      <span class="text-sm text-slate-500 flex items-center gap-3">
+        <span>{{ run.created_at|date:"Y-m-d H:i" }}</span>
+        <span>{{ run.txn_type|default:"—" }}</span>
+        {% if run.plan %}<span>{{ run.plan.name }}</span>{% endif %}
+        {% if run.error_count %}
+          <span class="rounded-full bg-red-100 text-red-800 px-2 py-0.5 text-xs">{{ run.error_count }} error{{ run.error_count|pluralize }}</span>
+        {% else %}
+          <span class="rounded-full bg-green-100 text-green-800 px-2 py-0.5 text-xs">valid</span>
+        {% endif %}
+      </span>
+    </a>
+  {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="mt-4 flex items-center justify-between text-sm">
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="text-sky-600 hover:underline">← Newer</a>
+  {% else %}<span></span>{% endif %}
+  <span class="text-slate-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="text-sky-600 hover:underline">Older →</a>
+  {% else %}<span></span>{% endif %}
+</div>
+{% endif %}
+{% else %}
+  <p class="text-slate-500">No validations yet. <a href="{% url 'validate' %}" class="text-sky-600 hover:underline">Validate a file</a> to get started.</p>
+{% endif %}
+{% endblock %}

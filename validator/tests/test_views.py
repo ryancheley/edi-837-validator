@@ -100,6 +100,32 @@ def test_export_without_validation_is_404(client_in):
     assert client_in.get("/export/bogus/").status_code == 404
 
 
+def test_history_lists_own_runs_and_detail(client_in, user):
+    body = _p_body()
+    body[body.index("BHT*0019*00*REF123*20210101*1253*CH")] = "BHT*0019*00*REF123*20210101*1253*XX"
+    fh = io.BytesIO(_edi(body).encode())
+    fh.name = "bad.837"
+    client_in.post("/", {"edi_file": fh})
+
+    listing = client_in.get("/history/")
+    assert listing.status_code == 200
+    assert b"bad.837" in listing.content
+
+    run = ValidationRun.objects.get(user=user)
+    detail = client_in.get(f"/history/{run.pk}/")
+    assert detail.status_code == 200
+    assert b"ELEM.CODE" in detail.content
+
+
+def test_history_detail_hidden_from_other_users(client, django_user_model):
+    owner = django_user_model.objects.create_user("owner", password="pw12345!")
+    run = ValidationRun.objects.create(user=owner, filename="owned.837", summary={"findings": []})
+    other = django_user_model.objects.create_user("other", password="pw12345!")
+    client.force_login(other)
+    assert client.get(f"/history/{run.pk}/").status_code == 404
+    assert b"owned.837" not in client.get("/history/").content
+
+
 def test_plan_create_flow(client_in):
     resp = client_in.post("/plans/new/", {"name": "BlueCo", "payer_id": "12345", "notes": ""})
     assert resp.status_code == 302

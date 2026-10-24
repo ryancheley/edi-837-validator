@@ -19,6 +19,7 @@
       <a href="{% url 'validate' %}" class="font-semibold text-lg text-sky-700">EDI 837 Validator</a>
       <nav class="flex items-center gap-4 text-sm">
         <a href="{% url 'validate' %}" class="hover:text-sky-700">Validate</a>
+        <a href="{% url 'history' %}" class="hover:text-sky-700">History</a>
         <a href="{% url 'plans' %}" class="hover:text-sky-700">Plans</a>
         {% if user.is_authenticated %}
           <form method="post" action="{% url 'logout' %}" class="inline">{% csrf_token %}
