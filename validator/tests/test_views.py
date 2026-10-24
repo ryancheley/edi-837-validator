@@ -126,6 +126,31 @@ def test_history_detail_hidden_from_other_users(client, django_user_model):
     assert b"owned.837" not in client.get("/history/").content
 
 
+def test_retry_failed_guide_restarts_extraction(client_in, monkeypatch):
+    started: list[int] = []
+    monkeypatch.setattr("validator.views._start_extraction", lambda g: started.append(g.pk))
+    plan = Plan.objects.create(name="Acme")
+    guide = CompanionGuide.objects.create(plan=plan, pdf="companion_guides/x.pdf", status="failed", error="boom")
+
+    resp = client_in.post(f"/guides/{guide.pk}/retry/")
+    assert resp.status_code == 200
+    guide.refresh_from_db()
+    assert guide.status == "pending"
+    assert guide.error == ""
+    assert started == [guide.pk]  # re-ran against the stored PDF, no re-upload
+
+
+def test_retry_is_noop_on_non_failed_guide(client_in, monkeypatch):
+    started: list[int] = []
+    monkeypatch.setattr("validator.views._start_extraction", lambda g: started.append(g.pk))
+    plan = Plan.objects.create(name="Acme")
+    guide = CompanionGuide.objects.create(plan=plan, pdf="companion_guides/x.pdf", status="active")
+
+    assert client_in.post(f"/guides/{guide.pk}/retry/").status_code == 200
+    guide.refresh_from_db()
+    assert guide.status == "active" and started == []
+
+
 def test_plan_create_flow(client_in):
     resp = client_in.post("/plans/new/", {"name": "BlueCo", "payer_id": "12345", "notes": ""})
     assert resp.status_code == 302

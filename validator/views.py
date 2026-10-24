@@ -201,6 +201,20 @@ def guide_status(request, pk):
 
 
 @login_required
+@require_POST
+def guide_retry(request, pk):
+    """Re-run extraction for a failed guide against its already-stored PDF."""
+    guide = get_object_or_404(CompanionGuide, pk=pk)
+    if guide.status == CompanionGuide.Status.FAILED:
+        guide.status = CompanionGuide.Status.PENDING
+        guide.error = ""
+        guide.save(update_fields=["status", "error"])
+        _start_extraction(guide)
+    ruleset = guide.rulesets.order_by("-created_at").first()
+    return render(request, "validator/_guide_status.html", {"guide": guide, "ruleset": ruleset})
+
+
+@login_required
 def ruleset_review(request, pk):
     import json
 
