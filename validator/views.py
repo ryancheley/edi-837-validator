@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 from .forms import GuideUploadForm, PlanForm
 from .guides import extract, schema
 from .models import CompanionGuide, Plan, RuleSet, ValidationRun
-from .x12 import engine
+from .x12 import engine, parser
 from .x12.errors import Severity, ValidationError
 
 MAX_837_BYTES = 10 * 1024 * 1024  # claim files are small; cap defensively
@@ -71,9 +71,22 @@ def validate_view(request):
         "grouped": _group_by_loop(result.errors),
         "filename": upload.name,
         "plan": plan,
+        # Display-only: lets the results view show the offending segment text.
+        # Built from the just-uploaded file, never persisted (PHI stays in memory).
+        "segment_text": _segment_text(raw),
     }
     template = "validator/_results.html" if request.headers.get("HX-Request") else "validator/validate.html"
     return render(request, template, context)
+
+
+def _segment_text(raw: bytes) -> dict[int, str]:
+    """Map 1-based segment position -> reconstructed segment text, for display."""
+    try:
+        doc = parser.parse(raw)
+    except parser.ParseError:
+        return {}
+    sep, term = doc.delimiters.element, doc.delimiters.segment
+    return {seg.pos: sep.join(seg.elements) + term for seg in doc.segments}
 
 
 def _group_by_loop(errors):
