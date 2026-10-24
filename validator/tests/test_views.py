@@ -8,9 +8,10 @@ import json
 import pytest
 from django.contrib.auth.models import User
 from django.test import override_settings
+from django.utils import timezone
 
 from validator.models import CompanionGuide, Plan, RuleSet, ValidationRun
-from validator.x12.tests.test_engine import _edi, _p_body
+from validator.x12.tests.test_engine import _edi, _i_body, _p_body
 
 
 @pytest.fixture
@@ -198,6 +199,43 @@ def test_retry_is_noop_on_non_failed_guide(client_in, monkeypatch):
     assert client_in.post(f"/guides/{guide.pk}/retry/").status_code == 200
     guide.refresh_from_db()
     assert guide.status == "active" and started == []
+
+
+def _ruleset(plan, txn_types, restrict_ref, allowed, when):
+    guide = CompanionGuide.objects.create(plan=plan, pdf="companion_guides/x.pdf", status="active")
+    return RuleSet.objects.create(
+        guide=guide,
+        is_active=True,
+        reviewed_at=when,
+        data={
+            "plan_name": plan.name,
+            "transaction_types": txn_types,
+            "required_elements": [],
+            "code_restrictions": [{"ref": restrict_ref, "allowed": allowed, "note": "x"}],
+            "notes": [],
+        },
+    )
+
+
+def test_overlay_selected_by_transaction_type_with_multiple_guides(client_in):
+    plan = Plan.objects.create(name="Acme")
+    now = timezone.now()
+    # 837P guide restricts SBR09; 837I guide restricts BHT06 and is reviewed LATER
+    # (so the old most-recent-wins logic would wrongly apply it to 837P too).
+    _ruleset(plan, ["837P"], "SBR09", ["MC"], now)
+    _ruleset(plan, ["837I"], "BHT06", ["RP"], now + timezone.timedelta(hours=1))
+
+    p = io.BytesIO(_edi(_p_body()).encode())  # SBR09=CI, BHT06=CH
+    p.name = "claim.837"
+    rp = client_in.post("/", {"edi_file": p, "plan": str(plan.pk)})
+    assert b"SBR09" in rp.content  # 837P ruleset applied
+    assert b"BHT06" not in rp.content  # 837I ruleset NOT applied despite being newer
+
+    i = io.BytesIO(_edi(_i_body()).encode())  # BHT06=CH
+    i.name = "claim.837"
+    ri = client_in.post("/", {"edi_file": i, "plan": str(plan.pk)})
+    assert b"BHT06" in ri.content  # 837I ruleset applied
+    assert b"SBR09" not in ri.content
 
 
 def test_plan_create_flow(client_in):

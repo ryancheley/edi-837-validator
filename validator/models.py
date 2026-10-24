@@ -39,12 +39,15 @@ class Plan(models.Model):
     def __str__(self) -> str:
         return str(self.name)
 
-    def active_ruleset(self) -> "RuleSet | None":
-        return (
-            RuleSet.objects.filter(guide__plan=self, is_active=True)
-            .order_by("-reviewed_at")
-            .first()
-        )
+    def active_ruleset(self, txn_type: str | None = None) -> "RuleSet | None":
+        """The active ruleset to apply. When ``txn_type`` is given, pick the one
+        whose ``transaction_types`` covers it so an 837P upload uses the 837P
+        guide and an 837I upload the 837I guide. Without it, the most recently
+        reviewed active ruleset (used by the plan list's "active" badge)."""
+        active = RuleSet.objects.filter(guide__plan=self, is_active=True).order_by("-reviewed_at")
+        if txn_type is None:
+            return active.first()
+        return next((r for r in active if txn_type in r.data.get("transaction_types", [])), None)
 
 
 class CompanionGuide(models.Model):
