@@ -7,6 +7,7 @@ import json
 
 import pytest
 from django.contrib.auth.models import User
+from django.test import override_settings
 
 from validator.models import CompanionGuide, Plan, RuleSet, ValidationRun
 from validator.x12.tests.test_engine import _edi, _p_body
@@ -25,6 +26,16 @@ def client_in(client, user):
 
 def _upload(body):
     return io.BytesIO(_edi(body).encode()), "claim.837"
+
+
+@override_settings(MAX_837_BYTES=16)
+def test_oversized_claim_rejected_with_configured_limit(client_in):
+    fh = io.BytesIO(b"X" * 64)
+    fh.name = "big.837"
+    resp = client_in.post("/", {"edi_file": fh})
+    assert resp.status_code == 200
+    assert b"File too large" in resp.content
+    assert ValidationRun.objects.count() == 0  # rejected before validation
 
 
 def test_validate_requires_login(client):
