@@ -50,5 +50,5 @@ include = [
 ]
 
 [tool.ty.overrides.rules]
-unresolved-attribute = "ignore"
+missing-attribute = "ignore"
 invalid-assignment = "ignore"
