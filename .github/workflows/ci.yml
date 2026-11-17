@@ -6,14 +6,15 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   # Each check is its own job so a failure in one (e.g. Ruff) doesn't skip the
   # others (e.g. the test suite). fail-fast: false keeps all legs running.
   check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -26,14 +27,18 @@ jobs:
             run: uv run pytest -q
           - name: workflow-audit
             run: uv run zizmor .github/workflows/
+          # Fails when actions.lock is out of sync with the workflows or a
+          # locked pin no longer verifies upstream.
+          - name: actions-lockfile
+            run: gh extension install github/gh-actions-lock --pin v0.4.1 && gh actions-lock --verify
     name: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
+        uses: astral-sh/setup-uv@v10.3.1
         with:
           enable-cache: true
 
