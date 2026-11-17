@@ -1,11 +1,13 @@
 version: 2
 updates:
-  # Keep the SHA-pinned actions in ci.yml current (Dependabot bumps the hash
-  # and the `# vX` comment together, so zizmor's unpinned-uses stays green).
+  # Keep the locked actions current (Dependabot updates the tag in ci.yml and
+  # the SHA in .github/workflows/actions.lock together).
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     groups:
       actions:
         patterns: ["*"]
