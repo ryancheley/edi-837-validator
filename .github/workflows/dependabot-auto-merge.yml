@@ -1,0 +1,21 @@
+name: Dependabot auto-merge
+on: pull_request
+
+permissions: {}
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    steps:
+      # --auto queues the squash merge; GitHub completes it once main's required
+      # checks (lint, types, test, workflow-audit, actions-lockfile) pass.
+      # Needs "Allow auto-merge" on the repo (github_repository.r_edi_837_validator
+      # in ryancheley/infra).
+      - run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
