@@ -6,6 +6,7 @@ workflows:
     '.github/workflows/ci.yml':
         - 'actions/checkout@v7.0.1'
         - 'astral-sh/setup-uv@v10.3.3'
+    '.github/workflows/dependabot-auto-merge.yml': []
 dependencies:
     'actions/checkout@v7.0.1':
         ref: 'v7.0.1'
